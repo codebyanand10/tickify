@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "414187782486",
+    "project_id": "agrobuddy-fa6bd",
+    "storage_bucket": "agrobuddy-fa6bd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:414187782486:android:7657ba883aa09b82d696f7",
+        "android_client_info": {
+          "package_name": "com.example.agro_buddy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1mbrbo7Onel62qF_TWMZgSlhCt9eVhCo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:414187782486:android:743fccb21b8aa64cd696f7",
+        "android_client_info": {
+          "package_name": "com.example.tickify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1mbrbo7Onel62qF_TWMZgSlhCt9eVhCo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

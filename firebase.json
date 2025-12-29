@@ -1,0 +1,28 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "agrobuddy-fa6bd",
+          "appId": "1:414187782486:android:743fccb21b8aa64cd696f7",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "agrobuddy-fa6bd",
+          "configurations": {
+            "android": "1:414187782486:android:743fccb21b8aa64cd696f7",
+            "ios": "1:414187782486:ios:64a6bf54cce6e815d696f7",
+            "macos": "1:414187782486:ios:64a6bf54cce6e815d696f7",
+            "web": "1:414187782486:web:4545728dea2be72ed696f7",
+            "windows": "1:414187782486:web:b6bed43cca31ff88d696f7"
+          }
+        }
+      }
+    }
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}
