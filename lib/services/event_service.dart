@@ -28,7 +28,7 @@ class EventService {
     if (eventData['date'] != null) {
       dateTimestamp = Timestamp.fromDate(eventData['date'] as DateTime);
     }
-
+ 
     // Ensure category is a valid lowercase key
     final category = (eventData['category'] ?? '').toString().toLowerCase().trim();
     

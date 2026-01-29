@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import '../services/storage_service.dart';
 import 'event_preview_screen.dart';
 
 class CreateEventScreen extends StatefulWidget {
@@ -29,6 +32,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   int? seatCount;
   double? feeAmount;
   String whatsappLink = '';
+
+  // Poster Image
+  File? _posterImage;
+  String? _posterImageUrl;
+  bool _isUploadingPoster = false;
+  final ImagePicker _imagePicker = ImagePicker();
+  final StorageService _storageService = StorageService();
 
   String collegeType = 'Intra College';
 
@@ -61,6 +71,56 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     'seminar': 'Seminar',
     'tournament': 'Tournament',
   };
+
+  Future<void> _pickPosterImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _posterImage = File(image.path);
+        });
+        // Auto upload once picked
+        await _uploadPoster();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadPoster() async {
+    if (_posterImage == null) return;
+
+    setState(() => _isUploadingPoster = true);
+
+    try {
+      final fileName = 'event_posters/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final url = await _storageService.uploadFile(
+        file: _posterImage!,
+        path: fileName,
+        bucket: 'certificates', // Using the same bucket we configured
+      );
+
+      setState(() {
+        _posterImageUrl = url;
+        _isUploadingPoster = false;
+      });
+    } catch (e) {
+      setState(() => _isUploadingPoster = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +202,57 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              // 0. Event Poster
+              buildSection("Event Poster", icon: Icons.image),
+              GestureDetector(
+                onTap: _isUploadingPoster ? null : _pickPosterImage,
+                child: Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _posterImageUrl != null 
+                          ? const Color(0xFF6C5CE7) 
+                          : Colors.grey.shade300,
+                      width: 2,
+                      style: _posterImageUrl != null ? BorderStyle.solid : BorderStyle.none,
+                    ),
+                  ),
+                  child: _isUploadingPoster
+                      ? const Center(child: CircularProgressIndicator())
+                      : _posterImageUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Image.network(_posterImageUrl!, fit: BoxFit.cover),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_photo_alternate_outlined, 
+                                     size: 48, color: Colors.grey.shade400),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Click to upload event poster",
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                ),
+              ),
+              if (_posterImageUrl != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: TextButton.icon(
+                    onPressed: _pickPosterImage,
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: const Text("Change Poster"),
+                    style: TextButton.styleFrom(foregroundColor: const Color(0xFF6C5CE7)),
+                  ),
+                ),
+              const SizedBox(height: 16),
 
               // 1. Event title
               buildTextField(
@@ -362,6 +473,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                                   'certification': certificationEvent,
                                   'coordinators': coordinators,
                                   'whatsapp': whatsappEnabled ? whatsappLink : null,
+                                  'posterUrl': _posterImageUrl,
                                 },
                               ),
                             ),

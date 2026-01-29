@@ -3,9 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/registration_service.dart';
 import '../services/event_service.dart';
+import '../services/certificate_service.dart';
 import 'qr_scanner_screen.dart';
 import 'attendance_report_screen.dart';
 import 'edit_event_screen.dart';
+import 'manage_certificate_screen.dart';
 
 class HostedEventsScreen extends StatelessWidget {
   const HostedEventsScreen({super.key});
@@ -585,6 +587,100 @@ class EventAnalyticsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // Generate Certificates Button (only if event is completed and certification enabled)
+                if (eventData['certification'] == true)
+                  FutureBuilder<bool>(
+                    future: _isEventCompleted(eventData['date'] as Timestamp?, eventData['time'] as String?),
+                    builder: (context, completedSnapshot) {
+                      if (completedSnapshot.data == true) {
+                        return FutureBuilder<bool>(
+                          future: _areCertificatesGenerated(eventId),
+                          builder: (context, certSnapshot) {
+                            if (certSnapshot.connectionState == ConnectionState.waiting) {
+                              return const SizedBox.shrink();
+                            }
+                            
+                            if (certSnapshot.data != true) {
+                              return Container(
+                                width: double.infinity,
+                                height: 56,
+                                margin: const EdgeInsets.only(bottom: 16),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFD4AF37), Color(0xFFF4D03F)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFD4AF37).withOpacity(0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 6),
+                                    ),
+                                  ],
+                                ),
+                                child: ElevatedButton.icon(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ManageCertificateScreen(
+                                        eventId: eventId,
+                                        eventData: eventData,
+                                      ),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.workspace_premium, color: Colors.white),
+                                  label: const Text(
+                                    "Generate Certificates",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                            
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.green),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.green),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "Certificates Generated",
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }
+                      
+                      return const SizedBox.shrink();
+                    },
+                  ),
                 const SizedBox(height: 24),
 
                 // Registrations List
@@ -818,6 +914,55 @@ class EventAnalyticsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Helper method to check if event is completed
+  static Future<bool> _isEventCompleted(Timestamp? eventDate, String? eventTime) async {
+    if (eventDate == null) return false;
+    
+    final now = DateTime.now();
+    final eventDateTime = eventDate.toDate();
+    
+    // If event time is available, compare with time
+    if (eventTime != null) {
+      try {
+        final parts = eventTime.split(':');
+        if (parts.length == 2) {
+          final eventDateTimeWithTime = DateTime(
+            eventDateTime.year,
+            eventDateTime.month,
+            eventDateTime.day,
+            int.parse(parts[0]),
+            int.parse(parts[1]),
+          );
+          return eventDateTimeWithTime.isBefore(now);
+        }
+      } catch (e) {
+        // If time parsing fails, just compare dates
+      }
+    }
+    
+    // Compare just the date (end of day)
+    final eventEndOfDay = DateTime(
+      eventDateTime.year,
+      eventDateTime.month,
+      eventDateTime.day,
+      23,
+      59,
+      59,
+    );
+    
+    return eventEndOfDay.isBefore(now);
+  }
+
+  // Helper method to check if certificates are generated
+  static Future<bool> _areCertificatesGenerated(String eventId) async {
+    try {
+      final certificateService = CertificateService();
+      return await certificateService.areCertificatesGenerated(eventId);
+    } catch (e) {
+      return false;
+    }
   }
 }
 

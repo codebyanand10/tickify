@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
+import 'certificates_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -169,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         CircleAvatar(
                           radius: 50,
                           backgroundColor: Colors.white.withOpacity(0.2),
-                          child: Icon(
+                          child: const Icon(
                             Icons.person,
                             size: 50,
                             color: Colors.white,
@@ -357,6 +358,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 24),
 
+                  // My Certificates Button
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFD4AF37).withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: const Color(0xFFD4AF37).withOpacity(0.5),
+                        width: 1,
+                      ),
+                    ),
+                    child: ListTile(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CertificatesScreen(),
+                          ),
+                        );
+                      },
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4AF37).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.workspace_premium,
+                          color: Color(0xFFD4AF37),
+                        ),
+                      ),
+                      title: Text(
+                        'My Certificates',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'View and download your earned certificates',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
                   // Logout Button
                   Container(
                     width: double.infinity,
@@ -492,4 +551,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-

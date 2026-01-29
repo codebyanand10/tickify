@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/event_service.dart';
+import 'certificate_template_editor_screen.dart';
 
 class EventPreviewScreen extends StatelessWidget {
   final Map<String, dynamic> eventData;
@@ -271,6 +272,82 @@ class EventPreviewScreen extends StatelessWidget {
                     eventData['certification'] ? "Yes" : "No",
                     isDark,
                   ),
+                  if (eventData['certification'] == true) ...[
+                    const Divider(height: 32),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFD4AF37), Color(0xFFF4D03F)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit, color: Colors.white),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Certificate Template",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  eventData['certificateTemplateUrl'] != null
+                                      ? "Template configured"
+                                      : "No template uploaded",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CertificateTemplateEditorScreen(
+                                    eventData: eventData,
+                                  ),
+                                ),
+                              );
+                              if (result == true) {
+                                // Refresh the screen to show updated template status
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => EventPreviewScreen(eventData: eventData),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.edit, size: 16),
+                            label: const Text("Edit"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFFD4AF37),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const Divider(height: 32),
                   previewItem(
                     Icons.people_outline,

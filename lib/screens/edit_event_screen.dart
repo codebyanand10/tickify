@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/event_service.dart';
+import '../services/certificate_service.dart';
+import '../services/event_service.dart';
+import '../services/certificate_service.dart';
+import 'certificate_template_editor_screen.dart';
+import 'template_selection_screen.dart';
 
 class EditEventScreen extends StatefulWidget {
   final String eventId;
@@ -398,7 +403,217 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
               const SizedBox(height: 24),
 
-              // 14. Buttons
+              // 14. Certificate Management (New Section)
+              if (certificationEvent) ...[
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.5)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFD4AF37).withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.workspace_premium, color: const Color(0xFFD4AF37), size: 24),
+                          const SizedBox(width: 12),
+                          const Text(
+                            "Certificate Management",
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                // Navigate to Template Editor
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CertificateTemplateEditorScreen(
+                                      eventData: widget.eventData,
+                                      eventId: widget.eventId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.design_services),
+                              label: const Text("Design New"),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFD4AF37),
+                                side: const BorderSide(color: Color(0xFFD4AF37)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context, 
+                                  MaterialPageRoute(
+                                    builder: (context) => TemplateSelectionScreen(
+                                      onTemplateSelected: (template) async {
+                                          // Ask user: Edit or Use Direct?
+                                          if (!mounted) return;
+                                          
+                                          final choice = await showDialog<String>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text("Selected Template"),
+                                              content: const Text("Do you want to edit this design or use it as is?"),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(context, 'use'),
+                                                  child: const Text("Use As Is"),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () => Navigator.pop(context, 'edit'), 
+                                                  child: const Text("Edit"),
+                                                ),
+                                              ],
+                                            )
+                                          );
+
+                                          if (!mounted) return;
+
+                                          if (choice == 'edit') {
+                                            // 1. Update event with this template data first (so editor loads it)
+                                            await FirebaseFirestore.instance.collection('events').doc(widget.eventId).update({
+                                              'certificateTemplateUrl': template['imageUrl'],
+                                              'certificateFields': template['fields'],
+                                            });
+                                            // 2. Open Editor
+                                            if (!mounted) return;
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => CertificateTemplateEditorScreen(
+                                                  eventData: widget.eventData, // This might be stale, but Editor fetches from ID
+                                                  eventId: widget.eventId,
+                                                ),
+                                              ),
+                                            );
+                                          } else if (choice == 'use') {
+                                             // 1. Save directly to Event
+                                            await FirebaseFirestore.instance.collection('events').doc(widget.eventId).update({
+                                              'certificateTemplateUrl': template['imageUrl'],
+                                              'certificateFields': template['fields'],
+                                            });
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text("Template applied! Click Generate to finish."), backgroundColor: Colors.green)
+                                            );
+                                          }
+                                      },
+                                    ),
+                                  )
+                                );
+                              },
+                              icon: const Icon(Icons.library_books),
+                              label: const Text("Library"),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF6C5CE7),
+                                side: const BorderSide(color: Color(0xFF6C5CE7)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Generate Certificates?'),
+                                content: const Text(
+                                  'This will generate certificates for ALL registered participants based on the current template. \n\nNote: Certificates will be marked as "Unpublished" initially.',
+                                ),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(context, true), 
+                                    child: const Text('Generate'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Generating certificates...'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                              
+                              try {
+                                final certService = CertificateService();
+                                await certService.generateCertificatesForEvent(
+                                  eventId: widget.eventId, 
+                                  eventData: widget.eventData, 
+                                  certificateSettings: {
+                                    'signatureName': coordinators.isNotEmpty ? coordinators[0]['name'] : 'Organizer',
+                                    // Add other settings here if needed
+                                  }
+                                );
+
+                                // Auto Publish immediately for now (or ask user)
+                                await certService.publishCertificates(widget.eventId);
+
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Certificates generated & published to students!'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.auto_awesome),
+                          label: const Text("Generate & Distribute"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD4AF37),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
+
+              // 15. Buttons
               Row(
                 children: [
                   Expanded(

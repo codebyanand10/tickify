@@ -49,4 +49,25 @@ class AuthService {
   Future<void> logout() async {
     await _auth.signOut();
   }
+
+  // PHONE AUTH
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required void Function(PhoneAuthCredential) onVerificationCompleted,
+    required void Function(FirebaseAuthException) onVerificationFailed,
+    required void Function(String, int?) onCodeSent,
+    required void Function(String) onCodeAutoRetrievalTimeout,
+  }) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: onVerificationCompleted,
+      verificationFailed: onVerificationFailed,
+      codeSent: onCodeSent,
+      codeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
+    );
+  }
+
+  Future<UserCredential> signInWithCredential(AuthCredential credential) async {
+    return await _auth.signInWithCredential(credential);
+  }
 }

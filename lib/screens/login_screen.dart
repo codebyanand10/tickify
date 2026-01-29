@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'register_screen.dart';
+import 'phone_login_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -448,6 +449,40 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ],
                                       ),
                               ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // PHONE LOGIN BUTTON
+                        Container(
+                          height: 60,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: const Color(0xFF6C5CE7).withOpacity(0.5), width: 2),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const PhoneLoginScreen()),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(18),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.phone_android_rounded, color: Color(0xFF6C5CE7)),
+                                SizedBox(width: 10),
+                                Text(
+                                  "Sign in with Phone",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF6C5CE7),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),

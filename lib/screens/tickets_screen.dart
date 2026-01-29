@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import '../services/certificate_service.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -855,6 +858,77 @@ class _TicketsScreenState extends State<TicketsScreen> {
                         ),
                       );
                     }),
+                    // Certificate Download Section (only for expired events)
+                    if (isExpired) ...[
+                      const SizedBox(height: 24),
+                      FutureBuilder<bool>(
+                        future: _checkCertificateAvailable(eventData['id'] ?? ''),
+                        builder: (context, certSnapshot) {
+                          if (certSnapshot.connectionState == ConnectionState.waiting) {
+                            return const SizedBox.shrink();
+                          }
+                          
+                          if (certSnapshot.data == true) {
+                            return Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFD4AF37), Color(0xFFF4D03F)],
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.workspace_premium, color: Colors.white, size: 24),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        'Certificate Available',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => _downloadCertificate(
+                                        context,
+                                        eventData['id'] ?? '',
+                                        eventData,
+                                      ),
+                                      icon: const Icon(Icons.download, color: Color(0xFFD4AF37)),
+                                      label: const Text(
+                                        'Download Certificate',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFFD4AF37),
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -863,6 +937,91 @@ class _TicketsScreenState extends State<TicketsScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> _checkCertificateAvailable(String eventId) async {
+    if (eventId.isEmpty || user == null) return false;
+    
+    try {
+      final cert = await FirebaseFirestore.instance
+          .collection('certificates')
+          .where('eventId', isEqualTo: eventId)
+          .where('userId', isEqualTo: user!.uid)
+          .where('published', isEqualTo: true)
+          .limit(1)
+          .get();
+      
+      return cert.docs.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> _downloadCertificate(
+    BuildContext context,
+    String eventId,
+    Map<String, dynamic> eventData,
+  ) async {
+    if (user == null) return;
+    
+    final certificateService = CertificateService();
+    
+    try {
+      // Show loading
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Generating certificate...'),
+              ],
+            ),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Get certificate PDF
+      final pdfBytes = await certificateService.getUserCertificate(
+        eventId: eventId,
+        userId: user!.uid,
+      );
+
+      if (pdfBytes == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Certificate not available yet'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Download/share PDF
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdfBytes,
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildDetailRow(IconData icon, String label, String value, Color textColor) {
