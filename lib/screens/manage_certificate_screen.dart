@@ -60,18 +60,29 @@ class _ManageCertificateScreenState extends State<ManageCertificateScreen> {
   }
 
   Future<Uint8List> _generatePreview() async {
+    // Extract template settings if available
+    final templateImageUrl = widget.eventData['certificateTemplateUrl'] as String? ?? 
+                             (widget.eventData['certificateSettings']?['templateImageUrl'] as String?);
+                             
+    final rawFields = (widget.eventData['certificateFields'] as List?) ?? 
+                      (widget.eventData['certificateSettings']?['templateFields'] as List?);
+    
+    final templateFields = rawFields?.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+
     // Dummy data for preview
     return _certificateService.generateCertificatePDF(
       participantName: 'John Doe',
       eventName: widget.eventData['title'] ?? 'Event Name',
       eventDate: '01 January 2024',
-      organizerName: _signatureName, // This param might be redundant if we pass settings, but keep for type safety
+      organizerName: _signatureName, 
       certificateType: _certificateTitle,
       certificateSettings: {
         'title': _certificateTitle,
         'signatureName': _signatureName,
         'signatureTitle': _signatureTitle,
       },
+      templateImageUrl: templateImageUrl,
+      templateFields: templateFields,
     );
   }
 

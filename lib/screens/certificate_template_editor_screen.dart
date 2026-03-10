@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/storage_service.dart';
 import '../services/certificate_service.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class CertificateTemplateEditorScreen extends StatefulWidget {
@@ -84,32 +87,12 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
   }
 
   Future<void> _loadImageDimensions(String url) async {
-    try {
-      final ImageStream stream = NetworkImage(url).resolve(ImageConfiguration.empty);
-      stream.addListener(ImageStreamListener((ImageInfo info, bool _) {
-        if (mounted) {
-          setState(() {
-            _imageAspectRatio = info.image.width / info.image.height;
-          });
-        }
-      }));
-    } catch (e) {
-      print("Error getting image dimensions: $e");
-    }
+    // Deprecated: We now force A4 Landscape ratio to match PDF output
+    // keeping method to avoid breaking compile if called, but it does nothing
   }
   
   Future<void> _loadFileDimensions(File file) async {
-    try {
-      final data = await file.readAsBytes();
-      final image = await decodeImageFromList(data);
-       if (mounted) {
-          setState(() {
-            _imageAspectRatio = image.width / image.height;
-          });
-       }
-    } catch (e) {
-      print("Error getting file dimensions: $e");
-    }
+    // Deprecated: We now force A4 Landscape ratio to match PDF output
   }
 
   Future<void> _pickImage() async {
@@ -268,22 +251,26 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
                 final name = await _askTemplateName();
                 if (name != null && name.isNotEmpty) {
                     // Save to Library
-                   final certService = CertificateService(); // Need import or instance
-                   // HACK: Quick instance since we didn't inject
-                   // Ideally use proper Locator or Provider
-                   await FirebaseFirestore.instance.collection('certificate_templates').add({
-                      'name': name,
-                      'imageUrl': _templateImageUrl,
-                      'fields': fieldsData,
-                      'createdBy': FirebaseAuth.instance.currentUser?.uid,
-                      'createdAt': Timestamp.now(),
-                      'isPublic': false,
-                   });
+                   final certService = CertificateService(); 
                    
-                   if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Saved to Template Library!'), backgroundColor: Colors.green),
-                      );
+                   try {
+                     await certService.saveSeriesTemplate(
+                        name: name,
+                        imageUrl: _templateImageUrl!,
+                        fields: fieldsData,
+                     );
+                     
+                     if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Saved to Template Library!'), backgroundColor: Colors.green),
+                        );
+                     }
+                   } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error saving template: $e'), backgroundColor: Colors.red),
+                        );
+                      }
                    }
                 }
               },
@@ -348,6 +335,61 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
     }
   }
 
+  Future<void> _showPreview() async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      Uint8List? imgBytes;
+      if (_templateImage != null) {
+        imgBytes = await _templateImage!.readAsBytes();
+      }
+
+      final service = CertificateService();
+      final pdfBytes = await service.generateCertificatePDF(
+        participantName: "JOHN DOE",
+        eventName: widget.eventData['title'] ?? "TECH SUMMIT 2026",
+        eventDate: "March 15, 2026",
+        organizerName: "Event Organizer",
+        department: "Computer Science",
+        semester: "6",
+        collegeName: "University College of Engineering",
+        templateFields: _fields.map((f) => f.toMap()).toList(),
+        templateImageUrl: _templateImageUrl, // Fallback if image not local
+        templateImageBytes: imgBytes, // Use local bytes if available
+      );
+
+      // Close loading
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => 
+          Scaffold(
+            appBar: AppBar(title: const Text("Certificate Preview")),
+            body: PdfPreview(
+              build: (format) => pdfBytes,
+              canChangeOrientation: false,
+              canChangePageFormat: false,
+              allowPrinting: true,
+              allowSharing: true,
+            ),
+          )
+        ));
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Close loading if error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating preview: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -358,6 +400,11 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
         title: const Text('Design Certificate', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         actions: [
+          IconButton(
+            onPressed: _showPreview,
+            icon: const Icon(Icons.remove_red_eye),
+            tooltip: "Preview PDF",
+          ),
           TextButton.icon(
             onPressed: _saveTemplate,
             icon: const Icon(Icons.check_circle_outline),
@@ -489,8 +536,8 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
     final alignY = (field.y * 2) - 1;
 
     // Approximate scaling Factor for font rendering on screen vs PDF
-    // Assuming containerWidth on phone is ~350-400px, and PDF A4 width is ~595pt
-    final visualFontSize = field.fontSize * (containerWidth / 595.0);
+    // PDF A4 Landscape layout width is ~842 points (29.7cm)
+    final visualFontSize = field.fontSize * (containerWidth / 842.0);
 
     return Align(
       alignment: Alignment(alignX, alignY),

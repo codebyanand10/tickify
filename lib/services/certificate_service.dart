@@ -28,9 +28,12 @@ class CertificateService {
     String? participantClass,
     String? templateImageUrl,
     List<Map<String, dynamic>>? templateFields,
+    Uint8List? templateImageBytes,
   }) async {
     // Use custom template if available
-    if (templateImageUrl != null && templateFields != null && templateFields.isNotEmpty) {
+    if ((templateImageUrl != null || templateImageBytes != null) && 
+        templateFields != null && 
+        templateFields.isNotEmpty) {
       return _generateCustomTemplateCertificate(
         participantName: participantName,
         eventName: eventName,
@@ -39,7 +42,8 @@ class CertificateService {
         department: department,
         semester: semester,
         collegeName: collegeName,
-        templateImageUrl: templateImageUrl,
+        templateImageUrl: templateImageUrl ?? '',
+        templateImageBytes: templateImageBytes,
         templateFields: templateFields,
       );
     }
@@ -299,13 +303,19 @@ class CertificateService {
     String? semester,
     String? collegeName,
     required String templateImageUrl,
+    Uint8List? templateImageBytes,
     required List<Map<String, dynamic>> templateFields,
   }) async {
     final pdf = pw.Document();
 
-    // Download template image
-    final imageResponse = await http.get(Uri.parse(templateImageUrl));
-    final imageBytes = imageResponse.bodyBytes;
+    // Download template image or use bytes
+    late Uint8List imageBytes;
+    if (templateImageBytes != null) {
+      imageBytes = templateImageBytes;
+    } else {
+      final imageResponse = await http.get(Uri.parse(templateImageUrl));
+      imageBytes = imageResponse.bodyBytes;
+    }
     final image = pw.MemoryImage(imageBytes);
 
     // Prepare field data map
@@ -421,8 +431,14 @@ class CertificateService {
                          eventData['title'] ?? 
                          'Event Organizer';
 
-    final templateImageUrl = eventData['certificateTemplateUrl'] as String?;
-    final templateFields = (eventData['certificateFields'] as List<dynamic>?)?.cast<Map<String, dynamic>>();
+    // Priority: 1. Event Data (from Edit Screen), 2. Settings (fallback)
+    final templateImageUrl = (eventData['certificateTemplateUrl'] as String?) ?? 
+                           (certificateSettings['templateImageUrl'] as String?);
+                           
+    final rawFields = (eventData['certificateFields'] as List?) ?? 
+                      (certificateSettings['templateFields'] as List?);
+                      
+    final templateFields = rawFields?.map((e) => Map<String, dynamic>.from(e as Map)).toList();
 
     final storageService = StorageService();
 
