@@ -440,8 +440,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
                             child: OutlinedButton.icon(
                               onPressed: () {
                                 // Navigate to Template Editor
-                                Navigator.push(
-                                  context,
+                                Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(
                                     builder: (context) => CertificateTemplateEditorScreen(
                                       eventData: widget.eventData,
@@ -499,8 +498,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
                                             });
                                             // 2. Open Editor
                                             if (!mounted) return;
-                                            Navigator.push(
-                                              context,
+                                            Navigator.of(context, rootNavigator: true).push(
                                               MaterialPageRoute(
                                                 builder: (context) => CertificateTemplateEditorScreen(
                                                   eventData: widget.eventData, // This might be stale, but Editor fetches from ID

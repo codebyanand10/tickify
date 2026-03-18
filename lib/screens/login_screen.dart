@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/credentials_store.dart';
 import 'register_screen.dart';
 import 'phone_login_screen.dart';
 
@@ -18,6 +19,20 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   String errorMessage = '';
 
+  @override
+  void initState() {
+    super.initState();
+    _prefillSavedCredentials();
+  }
+
+  Future<void> _prefillSavedCredentials() async {
+    final saved = await CredentialsStore.read();
+    if (!mounted || saved == null) return;
+    _emailController.text = saved.email;
+    _passwordController.text = saved.password;
+    setState(() {});
+  }
+
   void _login() async {
     setState(() {
       isLoading = true;
@@ -25,10 +40,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await _authService.login(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+      await _authService.login(email, password);
+      await CredentialsStore.save(email: email, password: password);
       // ✅ DO NOT navigate manually
       // Firebase authStateChanges() will handle screen change
     } catch (e) {
@@ -53,32 +68,31 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF1A1A2E),
-              const Color(0xFF16213E),
-              const Color(0xFF0F3460),
-              const Color(0xFF6C5CE7),
+              Color(0xFF6C5CE7), // Vibrant purple
+              Color(0xFF00D2D3), // Aqua accent
+              Color(0xFFF8F9FA), // Light background
             ],
-            stops: const [0.0, 0.3, 0.6, 1.0],
+            stops: [0.0, 0.6, 1.0],
           ),
         ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 40),
-                  // Enhanced Logo/Icon with animation
+                  const SizedBox(height: 24),
+                  // Smaller Logo/Icon with animation
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 800),
+                    duration: Duration(milliseconds: 700),
                     curve: Curves.easeOutBack,
                     builder: (context, value, child) {
                       return Transform.scale(
@@ -87,31 +101,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.white.withOpacity(0.25),
-                            Colors.white.withOpacity(0.15),
+                            Colors.white.withOpacity(0.18),
+                            Colors.white.withOpacity(0.10),
                           ],
                         ),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.white.withOpacity(0.3),
-                            blurRadius: 30,
-                            spreadRadius: 5,
+                            color: Colors.white.withOpacity(0.18),
+                            blurRadius: 18,
+                            spreadRadius: 2,
                           ),
                         ],
                       ),
                       child: const Icon(
                         Icons.event_note,
-                        size: 72,
+                        size: 44,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 18),
                   
                   // Enhanced Title with gradient text
                   TweenAnimationBuilder<double>(

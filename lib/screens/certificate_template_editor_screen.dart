@@ -567,7 +567,7 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
           ),
           child: Text(
             sampleText,
-            textAlign: TextAlign.center,
+            textAlign: TextAlign.left,
             style: TextStyle(
               fontSize: visualFontSize < 8 ? 8 : visualFontSize, // Min size for readability
               fontWeight: field.fontWeight,
