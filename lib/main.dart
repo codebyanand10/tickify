@@ -142,7 +142,7 @@ class _TickifyAppState extends State<TickifyApp> {
         ),
       ),
 
-      // 🔑 THIS decides which screen to show
+      //  THIS decides which screen to show
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
@@ -159,7 +159,7 @@ class _TickifyAppState extends State<TickifyApp> {
             return HomeScreen(toggleTheme: toggleTheme);
           }
 
-          // ❌ Not logged in → LoginScreen
+          // Not logged in → LoginScreen
           return const LoginScreen();
         },
       ),
