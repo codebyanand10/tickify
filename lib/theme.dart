@@ -69,32 +69,45 @@ ThemeData _baseTheme(ColorScheme colorScheme) {
 
 final ThemeData appThemeLight = _baseTheme(
   ColorScheme.fromSeed(
-    seedColor: const Color(0xFF4F46E5), // indigo (cleaner in light mode)
+    seedColor: const Color(0xFF7A002B),
     brightness: Brightness.light,
   ).copyWith(
-    primary: const Color(0xFF4F46E5),
+    primary: const Color(0xFF7A002B),
     onPrimary: Colors.white,
-    primaryContainer: const Color(0xFFE7E7FF),
-    onPrimaryContainer: const Color(0xFF1B1B6B),
-    secondary: const Color(0xFF0F766E), // deep teal
+    primaryContainer: const Color(0xFFFFD9E2),
+    onPrimaryContainer: const Color(0xFF3E0014),
+    secondary: const Color(0xFFAC1634),
     onSecondary: Colors.white,
-    secondaryContainer: const Color(0xFFCCFBF1),
-    onSecondaryContainer: const Color(0xFF083C36),
-    tertiary: const Color(0xFF7C3AED), // violet accent
-    tertiaryContainer: const Color(0xFFF1E8FF),
-    surface: const Color(0xFFF7F7FB), // soft off-white
-    surfaceContainerHighest: const Color(0xFFEFEFF6), // card/nav surfaces
-    outlineVariant: const Color(0xFFD7D8E5),
-    onSurfaceVariant: const Color(0xFF53556A),
+    secondaryContainer: const Color(0xFFFFDAD9),
+    onSecondaryContainer: const Color(0xFF41000A),
+    tertiary: const Color(0xFF5B002C),
+    tertiaryContainer: const Color(0xFFFFD9E4),
+    surface: const Color(0xFFFFF8F8),
+    surfaceContainerHighest: const Color(0xFFF9EBEF),
+    outlineVariant: const Color(0xFFE5D1D5),
+    onSurfaceVariant: const Color(0xFF514347),
   ),
 );
 
 final ThemeData appThemeDark = _baseTheme(
   ColorScheme.fromSeed(
-    seedColor: const Color(0xFF7C7DFF),
+    seedColor: const Color(0xFF7A002B),
     brightness: Brightness.dark,
   ).copyWith(
-    secondary: const Color(0xFF20D4C3),
-    tertiary: const Color(0xFF9A8CFF),
+    primary: const Color(0xFF7A002B),
+    onPrimary: Colors.white,
+    primaryContainer: const Color(0xFF5B002C),
+    onPrimaryContainer: const Color(0xFFFFD9E4),
+    secondary: const Color(0xFFAC1634),
+    onSecondary: Colors.white,
+    secondaryContainer: const Color(0xFF900021),
+    onSecondaryContainer: const Color(0xFFFFDAD9),
+    tertiary: const Color(0xFFE77291),
+    tertiaryContainer: const Color(0xFF5B002C),
+    surface: const Color(0xFF000000), // Pure Black surface
+    onSurface: const Color(0xFFECE0E1),
+    surfaceContainerHighest: const Color(0xFF1E1416), // Dark Burgundy/Rustic Red tone for cards
+    outlineVariant: const Color(0xFF333333),
+    onSurfaceVariant: const Color(0xFFD1C1C4),
   ),
 );

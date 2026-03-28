@@ -69,7 +69,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -187,7 +187,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           child: Icon(
                             Icons.confirmation_number_outlined,
                             size: 64,
-                            color: const Color(0xFF6C5CE7),
+                            color: const Color(0xFF7A002B),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -248,7 +248,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                             border: Border.all(
                               color: isExpired
                                   ? Colors.grey.shade600.withOpacity(0.3)
-                                  : const Color(0xFF6C5CE7).withOpacity(0.3),
+                                  : const Color(0xFF7A002B).withOpacity(0.3),
                               width: 1.5,
                             ),
                             boxShadow: [
@@ -287,7 +287,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                               ],
                                             )
                                           : const LinearGradient(
-                                              colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                                              colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                                             ),
                                       borderRadius: const BorderRadius.vertical(
                                         top: Radius.circular(20),
@@ -465,7 +465,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                         border: Border.all(
                                           color: isExpired
                                               ? Colors.grey.shade600.withOpacity(0.3)
-                                              : const Color(0xFF6C5CE7).withOpacity(0.2),
+                                              : const Color(0xFF7A002B).withOpacity(0.2),
                                           width: 1,
                                         ),
                                       ),
@@ -484,7 +484,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                               size: 20,
                                               color: isExpired
                                                   ? Colors.grey.shade400
-                                                  : const Color(0xFF6C5CE7),
+                                                  : const Color(0xFF7A002B),
                                             ),
                                           ),
                                           const SizedBox(width: 12),
@@ -726,7 +726,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 ],
                               )
                             : const LinearGradient(
-                                colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                                colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                               ),
                         borderRadius: BorderRadius.circular(20),
                       ),

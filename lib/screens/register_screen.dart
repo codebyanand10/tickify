@@ -285,10 +285,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF1A1A2E),
-              const Color(0xFF16213E),
-              const Color(0xFF0F3460),
-              const Color(0xFF6C5CE7),
+              const Color(0xFF3E0014), // Rustic Red
+              const Color(0xFF1A000A), // Dark Burgundy
+              const Color(0xFF000000), // Black
+              const Color(0xFF7A002B), // Burgundy accent
             ],
             stops: const [0.0, 0.3, 0.6, 1.0],
           ),
@@ -612,13 +612,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       height: 60,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE), Color(0xFF00D2D3)],
+          colors: [Color(0xFF7A002B), Color(0xFFAC1634), Color(0xFFE77291)],
           stops: [0.0, 0.5, 1.0],
         ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6C5CE7).withOpacity(0.4),
+            color: const Color(0xFF7A002B).withOpacity(0.4),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -697,7 +697,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
               ),
               borderRadius: BorderRadius.circular(10),
             ),
@@ -719,7 +719,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(
-              color: Color(0xFF6C5CE7),
+              color: Color(0xFF7A002B),
               width: 2.5,
             ),
           ),

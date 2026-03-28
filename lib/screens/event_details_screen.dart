@@ -19,12 +19,12 @@ class EventDetailsScreen extends StatelessWidget {
 
   // Category colors
   static const Map<String, Color> categoryColors = {
-    'workshop': Color(0xFF6C5CE7),
-    'ideathon': Color(0xFFFFD700),
-    'hackathon': Color(0xFF00D2D3),
-    'cultural': Color(0xFFFF7675),
-    'seminar': Color(0xFF54A0FF),
-    'tournament': Color(0xFFFF6B6B),
+    'workshop': Color(0xFF7A002B), // Burgundy
+    'ideathon': Color(0xFFE77291), // Deep Blush
+    'hackathon': Color(0xFFAC1634), // Cardinal Red
+    'cultural': Color(0xFF5B002C), // Tyrian Purple
+    'seminar': Color(0xFF3E0014), // Rustic Red
+    'tournament': Color(0xFF900021), // Crimson Red
   };
 
   String getCategoryLabel(String? categoryKey) {
@@ -33,8 +33,8 @@ class EventDetailsScreen extends StatelessWidget {
   }
 
   Color getCategoryColor(String? categoryKey) {
-    if (categoryKey == null) return const Color(0xFF6C5CE7);
-    return categoryColors[categoryKey] ?? const Color(0xFF6C5CE7);
+    if (categoryKey == null) return const Color(0xFF7A002B);
+    return categoryColors[categoryKey] ?? const Color(0xFF7A002B);
   }
 
   @override

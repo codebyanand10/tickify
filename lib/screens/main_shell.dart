@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'calendar_screen.dart';
 import 'hosted_events_screen.dart';
@@ -80,20 +81,39 @@ class _MainShellState extends State<MainShell> with RestorationMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Stack(
-        children: [
-          _tabNavigator(tabIndex: 0, child: HomeScreen(toggleTheme: widget.toggleTheme)),
-          _tabNavigator(tabIndex: 1, child: const HostedEventsScreen()),
-          _tabNavigator(tabIndex: 2, child: const CalendarScreen()),
-          _tabNavigator(tabIndex: 3, child: const TicketsScreen()),
-          _tabNavigator(tabIndex: 4, child: const ProfileScreen()),
-        ],
-      ),
-      bottomNavigationBar: _FloatingNavBar(
-        currentIndex: _currentIndex.value,
-        onTap: _onNavTap,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        final navigator = _navigatorKeys[_currentIndex.value].currentState;
+        if (navigator != null && navigator.canPop()) {
+          navigator.pop();
+        } else if (_currentIndex.value != 0) {
+          setState(() {
+            _currentIndex.value = 0;
+          });
+        } else {
+          // If we are on the first tab and its stack is empty,
+          // then the entire app should close.
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: Stack(
+          children: [
+            _tabNavigator(tabIndex: 0, child: HomeScreen(toggleTheme: widget.toggleTheme)),
+            _tabNavigator(tabIndex: 1, child: const HostedEventsScreen()),
+            _tabNavigator(tabIndex: 2, child: const CalendarScreen()),
+            _tabNavigator(tabIndex: 3, child: const TicketsScreen()),
+            _tabNavigator(tabIndex: 4, child: const ProfileScreen()),
+          ],
+        ),
+        bottomNavigationBar: _FloatingNavBar(
+          currentIndex: _currentIndex.value,
+          onTap: _onNavTap,
+        ),
       ),
     );
   }

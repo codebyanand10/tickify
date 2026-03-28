@@ -73,11 +73,11 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF6C5CE7), // Vibrant purple
-              Color(0xFF00D2D3), // Aqua accent
-              Color(0xFFF8F9FA), // Light background
+              Color(0xFF3E0014), // Rustic Red
+              Color(0xFF1A000A), // Very Dark Burgundy
+              Color(0xFF000000), // Black
             ],
-            stops: [0.0, 0.6, 1.0],
+            stops: [0.0, 0.4, 1.0],
           ),
         ),
         child: SafeArea(
@@ -143,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: ShaderMask(
                       shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Colors.white, Color(0xFFA29BFE)],
+                        colors: [Colors.white, Color(0xFFE77291)],
                       ).createShader(bounds),
                       child: const Text(
                         "Tickify",
@@ -256,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                                color: const Color(0xFF7A002B).withOpacity(0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -277,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                                    colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                                   ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -299,7 +299,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: const BorderSide(
-                                  color: Color(0xFF6C5CE7),
+                                  color: Color(0xFF7A002B),
                                   width: 2.5,
                                 ),
                               ),
@@ -338,7 +338,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                                    colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                                   ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -360,7 +360,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: const BorderSide(
-                                  color: Color(0xFF6C5CE7),
+                                  color: Color(0xFF7A002B),
                                   width: 2.5,
                                 ),
                               ),
@@ -410,16 +410,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [
-                                Color(0xFF6C5CE7),
-                                Color(0xFFA29BFE),
-                                Color(0xFF00D2D3),
+                                Color(0xFF7A002B),
+                                Color(0xFFAC1634),
+                                Color(0xFF3E0014),
                               ],
                               stops: [0.0, 0.5, 1.0],
                             ),
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF6C5CE7).withOpacity(0.4),
+                                color: const Color(0xFF7A002B).withOpacity(0.4),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                                 spreadRadius: 0,
@@ -472,7 +472,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Container(
                           height: 60,
                           decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xFF6C5CE7).withOpacity(0.5), width: 2),
+                            border: Border.all(color: const Color(0xFF7A002B).withOpacity(0.5), width: 2),
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: InkWell(
@@ -486,14 +486,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.phone_android_rounded, color: Color(0xFF6C5CE7)),
+                                Icon(Icons.phone_android_rounded, color: Color(0xFF7A002B)),
                                 SizedBox(width: 10),
                                 Text(
                                   "Sign in with Phone",
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF6C5CE7),
+                                    color: Color(0xFF7A002B),
                                   ),
                                 ),
                               ],

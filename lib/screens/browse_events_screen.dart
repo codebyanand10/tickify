@@ -3,8 +3,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'event_details_screen.dart';
 
-class BrowseEventsScreen extends StatelessWidget {
-  const BrowseEventsScreen({super.key});
+class BrowseEventsScreen extends StatefulWidget {
+  final String? initialSearchQuery;
+  const BrowseEventsScreen({super.key, this.initialSearchQuery});
+
+  @override
+  State<BrowseEventsScreen> createState() => _BrowseEventsScreenState();
+}
+
+class _BrowseEventsScreenState extends State<BrowseEventsScreen> {
+  late final TextEditingController _searchController;
+  late String _searchQuery;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: widget.initialSearchQuery);
+    _searchQuery = (widget.initialSearchQuery ?? '').toLowerCase();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,28 +35,49 @@ class BrowseEventsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+        title: const Text(
+          'Browse Events',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            letterSpacing: 0.5,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(70),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search events, clubs, locations...',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.explore, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Browse Events',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                letterSpacing: 0.5,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
             ),
-          ],
+          ),
         ),
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         foregroundColor: isDark ? Colors.white : Colors.black87,
@@ -44,7 +87,6 @@ class BrowseEventsScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('events')
             .where('status', isEqualTo: 'published')
-            .orderBy('date', descending: false)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -69,61 +111,61 @@ class BrowseEventsScreen extends StatelessWidget {
                       color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      snapshot.error.toString(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.red.shade300,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF6C5CE7).withOpacity(0.2),
-                          const Color(0xFFA29BFE).withOpacity(0.2),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.event_busy,
-                      size: 64,
-                      color: const Color(0xFF6C5CE7),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'No events available',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Check back later for upcoming events',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            );
+            return _buildEmptyState(isDark);
+          }
+
+          // Filter documents client-side for search
+          final filteredDocs = snapshot.data!.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final title = (data['title'] ?? '').toString().toLowerCase();
+            final location = (data['location'] ?? '').toString().toLowerCase();
+            final category = (data['category'] ?? '').toString().toLowerCase();
+            final description = (data['description'] ?? '').toString().toLowerCase();
+
+            return title.contains(_searchQuery) ||
+                location.contains(_searchQuery) ||
+                category.contains(_searchQuery) ||
+                description.contains(_searchQuery);
+          }).toList();
+
+          // Sort by date manually if needed, or by createdAt
+          filteredDocs.sort((a, b) {
+            final aData = a.data() as Map<String, dynamic>;
+            final bData = b.data() as Map<String, dynamic>;
+            final aDate = aData['date'] as Timestamp?;
+            final bDate = bData['date'] as Timestamp?;
+            if (aDate == null) return 1;
+            if (bDate == null) return -1;
+            return aDate.compareTo(bDate);
+          });
+
+          if (filteredDocs.isEmpty) {
+            return _buildEmptyState(isDark, isSearch: true);
           }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: snapshot.data!.docs.length,
+            itemCount: filteredDocs.length,
             itemBuilder: (context, index) {
-              final event = snapshot.data!.docs[index];
+              final event = filteredDocs[index];
               final eventData = event.data() as Map<String, dynamic>;
               final eventDate = eventData['date'] as Timestamp?;
               final eventTime = eventData['time'] as String?;
@@ -233,10 +275,10 @@ class BrowseEventsScreen extends StatelessWidget {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.calendar_today,
                                         size: 14,
-                                        color: const Color(0xFF6C5CE7),
+                                        color: Color(0xFF6C5CE7),
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
@@ -385,6 +427,53 @@ class BrowseEventsScreen extends StatelessWidget {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool isDark, {bool isSearch = false}) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF6C5CE7).withOpacity(0.2),
+                  const Color(0xFFA29BFE).withOpacity(0.2),
+                ],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isSearch ? Icons.search_off_rounded : Icons.event_busy,
+              size: 64,
+              color: const Color(0xFF6C5CE7),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            isSearch ? 'No matching events' : 'No events available',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            isSearch
+                ? 'Try adjusting your search terms'
+                : 'Check back later for upcoming events',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+          ),
+        ],
       ),
     );
   }

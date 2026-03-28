@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'category_events_screen.dart';
 import 'create_event_screen.dart';
 import 'browse_events_screen.dart';
-// import 'notifications_screen.dart';
-// import '../services/notification_db_service.dart';
+import 'event_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(bool) toggleTheme;
@@ -15,24 +15,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<Map<String, dynamic>> banners = [
-    {
-      'title': 'Hackathon 2025',
-      'subtitle': 'Code. Build. Innovate.',
-      'icon': Icons.code_rounded,
-    },
-    {
-      'title': 'AI Workshop',
-      'subtitle': 'Learn the Future',
-      'icon': Icons.psychology_rounded,
-    },
-    {
-      'title': 'Cultural Fest',
-      'subtitle': 'Celebrate Diversity',
-      'icon': Icons.music_note_rounded,
-    },
-  ];
-
   final List<Map<String, dynamic>> categories = [
     {'key': 'workshop', 'label': 'Workshops', 'icon': Icons.workspace_premium_rounded},
     {'key': 'ideathon', 'label': 'Ideathons', 'icon': Icons.lightbulb_rounded},
@@ -47,6 +29,16 @@ class _HomeScreenState extends State<HomeScreen> {
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
+  }
+
+  void _onSearch(String value) {
+    if (value.trim().isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BrowseEventsScreen(initialSearchQuery: value),
+      ),
+    );
   }
 
   void _openBrowse() {
@@ -108,48 +100,45 @@ class _HomeScreenState extends State<HomeScreen> {
                                 padding: const EdgeInsets.all(12),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            IconButton(
-                              onPressed: _openBrowse,
-                              icon: const Icon(Icons.search_rounded),
-                              tooltip: 'Search',
-                              style: IconButton.styleFrom(
-                                backgroundColor: cs.surfaceContainerHighest,
-                                foregroundColor: cs.onSurface,
-                                padding: const EdgeInsets.all(12),
-                              ),
-                            ),
                           ],
                         ),
                       ],
                     ),
                     const SizedBox(height: 14),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: _openBrowse,
-                      child: Ink(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: cs.outlineVariant),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.search_rounded, color: cs.onSurfaceVariant),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Search events, clubs, categories…',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: cs.onSurfaceVariant,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: cs.outlineVariant),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.search_rounded, color: cs.onSurfaceVariant),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              onSubmitted: _onSearch,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Search events, clubs, categories…',
+                                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                                  color: cs.onSurfaceVariant.withOpacity(0.7),
                                   fontWeight: FontWeight.w600,
                                 ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 12),
                               ),
                             ),
-                            Icon(Icons.tune_rounded, color: cs.onSurfaceVariant),
-                          ],
-                        ),
+                          ),
+                          IconButton(
+                            onPressed: _openBrowse,
+                            icon: Icon(Icons.tune_rounded, color: cs.onSurfaceVariant),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -159,34 +148,71 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
 
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 10, 18, 6),
-              child: _SectionHeader(
-                title: 'Featured',
-                actionLabel: 'See all',
-                onAction: _openBrowse,
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 178,
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
-                scrollDirection: Axis.horizontal,
-                itemCount: banners.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 14),
-                itemBuilder: (context, index) {
-                  final banner = banners[index];
-                  final icon = banner['icon'] as IconData;
-                  return _FeaturedCard(
-                    title: banner['title'] as String,
-                    subtitle: banner['subtitle'] as String,
-                    icon: icon,
-                    onTap: _openBrowse,
-                  );
-                },
-              ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('events')
+                  .where('status', isEqualTo: 'published')
+                  .orderBy('createdAt', descending: true)
+                  .limit(5)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                final eventDocs = snapshot.data!.docs;
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 10, 18, 6),
+                      child: _SectionHeader(
+                        title: 'Featured',
+                        actionLabel: 'See all',
+                        onAction: _openBrowse,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 178,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: eventDocs.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 14),
+                        itemBuilder: (context, index) {
+                          final eventDoc = eventDocs[index];
+                          final eventData = eventDoc.data() as Map<String, dynamic>;
+                          
+                          // Map category to icon
+                          IconData categoryIcon = Icons.event_rounded;
+                          final category = (eventData['category'] ?? '').toString().toLowerCase();
+                          if (category.contains('hackathon')) categoryIcon = Icons.laptop_mac_rounded;
+                          else if (category.contains('workshop')) categoryIcon = Icons.workspace_premium_rounded;
+                          else if (category.contains('cultural')) categoryIcon = Icons.palette_rounded;
+                          else if (category.contains('ideathon')) categoryIcon = Icons.lightbulb_rounded;
+                          else if (category.contains('seminar')) categoryIcon = Icons.school_rounded;
+                          else if (category.contains('tournament') || category.contains('sports')) categoryIcon = Icons.emoji_events_rounded;
+
+                          return _FeaturedCard(
+                            title: eventData['title'] ?? 'Event',
+                            subtitle: eventData['location'] ?? 'Venue TBA',
+                            icon: categoryIcon,
+                            posterUrl: eventData['posterUrl'],
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => EventDetailsScreen(event: eventDoc),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
 
@@ -340,12 +366,14 @@ class _FeaturedCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
+  final String? posterUrl;
   final VoidCallback onTap;
 
   const _FeaturedCard({
     required this.title,
     required this.subtitle,
     required this.icon,
+    this.posterUrl,
     required this.onTap,
   });
 
@@ -369,6 +397,17 @@ class _FeaturedCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
+                if (posterUrl != null && posterUrl!.isNotEmpty)
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.network(
+                        posterUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
                 Positioned.fill(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -376,11 +415,17 @@ class _FeaturedCard extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          cs.primary.withOpacity(0.20),
-                          cs.tertiary.withOpacity(0.10),
-                          cs.surfaceContainerHighest.withOpacity(0.0),
-                        ],
+                        colors: posterUrl != null && posterUrl!.isNotEmpty
+                            ? [
+                                Colors.black.withOpacity(0.7),
+                                Colors.black.withOpacity(0.3),
+                                Colors.transparent,
+                              ]
+                            : [
+                                cs.primary.withOpacity(0.20),
+                                cs.tertiary.withOpacity(0.10),
+                                cs.surfaceContainerHighest.withOpacity(0.0),
+                              ],
                       ),
                     ),
                   ),
@@ -407,6 +452,7 @@ class _FeaturedCard extends StatelessWidget {
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.3,
+                          color: (posterUrl != null && posterUrl!.isNotEmpty) ? Colors.white : null,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -415,7 +461,7 @@ class _FeaturedCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
+                          color: (posterUrl != null && posterUrl!.isNotEmpty) ? Colors.white.withOpacity(0.8) : cs.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -425,12 +471,16 @@ class _FeaturedCard extends StatelessWidget {
                           Text(
                             'Explore',
                             style: theme.textTheme.labelLarge?.copyWith(
-                              color: cs.primary,
+                              color: (posterUrl != null && posterUrl!.isNotEmpty) ? Colors.white : cs.primary,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Icon(Icons.arrow_forward_rounded, color: cs.primary, size: 18),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: (posterUrl != null && posterUrl!.isNotEmpty) ? Colors.white : cs.primary,
+                            size: 18,
+                          ),
                         ],
                       ),
                     ],

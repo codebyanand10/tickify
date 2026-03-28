@@ -140,10 +140,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF1A1A2E), // Dark Navy
-              const Color(0xFF16213E),
-              const Color(0xFF0F3460),
-              const Color(0xFF6C5CE7).withOpacity(0.8), // Purple accent
+              const Color(0xFF3E0014), // Rustic Red
+              const Color(0xFF1A000A), // Dark Burgundy
+              const Color(0xFF000000), // Black
+              const Color(0xFF7A002B).withOpacity(0.8), // Burgundy accent
             ],
             stops: const [0.0, 0.3, 0.6, 1.0],
           ),
@@ -256,7 +256,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                                    labelText: "Phone Number",
                                    hintText: "+1 650 555 3434",
                                    labelStyle: TextStyle(color: Colors.grey.shade600),
-                                   prefixIcon: const Icon(Icons.dialpad, color: Color(0xFF6C5CE7)),
+                                   prefixIcon: const Icon(Icons.dialpad, color: Color(0xFF7A002B)),
                                    border: OutlineInputBorder(
                                      borderRadius: BorderRadius.circular(16),
                                      borderSide: BorderSide.none,
@@ -319,7 +319,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                             height: 55,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                                colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
@@ -366,7 +366,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                                     ? "Resend Code"
                                     : "Resend Code in ${_start}s",
                                   style: TextStyle(
-                                    color: _canResend ? const Color(0xFF6C5CE7) : Colors.grey,
+                                    color: _canResend ? const Color(0xFF7A002B) : Colors.grey,
                                   ),
                                 ),
                               ),
