@@ -31,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   
   bool isLoading = false;
   String errorMessage = '';
-  String userRole = 'student'; // 'student' or 'visitor'
+  String userRole = 'student'; // 'student', 'organizer', or 'admin'
   String registrationMethod = 'email'; // 'email' or 'phone'
   DateTime? dateOfBirth;
 
@@ -219,7 +219,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         userData['email'] = _emailController.text.trim();
         // Also save phone if it was sought for visitor, but currently visitor phone is same as login phone in this new flow?
         // If visitor selected email, we might still want phone. But let's stick to the selected method for primary ID.
-        if (userRole == 'visitor' && _phoneController.text.isNotEmpty) {
+        if ((userRole == 'organizer' || userRole == 'admin') && _phoneController.text.isNotEmpty) {
            userData['phone'] = _phoneController.text.trim();
         }
       } else {
@@ -338,7 +338,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Row(
                       children: [
                         _buildRoleTab("Student", "student"),
-                        _buildRoleTab("Visitor", "visitor"),
+                        _buildRoleTab("Organizer", "organizer"),
+                        _buildRoleTab("Admin", "admin"),
                       ],
                     ),
                   ),
@@ -422,7 +423,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           // If visitor, maybe ask for phone optionally or required?
                           // The original code asked for phone for visitors. Let's keep it.
-                          if (userRole == 'visitor') ...[
+                          if (userRole == 'organizer' || userRole == 'admin') ...[
                              const SizedBox(height: 20),
                              _buildTextField(
                                controller: _phoneController,

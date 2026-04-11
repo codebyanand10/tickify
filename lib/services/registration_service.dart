@@ -119,8 +119,8 @@ class RegistrationService {
       registrationData['semester'] = userData['semester'];
     }
 
-    // Add visitor-specific fields
-    if (userData['role'] == 'visitor') {
+    // Add organizer/admin specific fields
+    if (userData['role'] == 'organizer' || userData['role'] == 'admin') {
       registrationData['phone'] = userData['phone'];
       registrationData['dateOfBirth'] = userData['dateOfBirth'];
     }

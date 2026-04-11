@@ -261,7 +261,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               isDark,
                             ),
                           ],
-                          if (userData!['role'] == 'visitor') ...[
+                          if (userData!['role'] == 'organizer' || userData!['role'] == 'admin') ...[
                             const Divider(height: 32),
                             _buildInfoRow(
                               Icons.phone,
