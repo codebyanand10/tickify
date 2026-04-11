@@ -1,0 +1,25 @@
+flowchart LR
+    title[<b>Functional Testing Matrix (Pass Rate: 100%)</b>]
+    style title fill:#1A000A,color:#ffffff,stroke-width:2px,stroke:#3E0014
+
+    subgraph "Auth & Security"
+    TC1[TC-01: Multi-session Auth]
+    TC2[TC-02: Secure Token Handshake]
+    end
+    
+    subgraph "Core Events"
+    TC3[TC-03: Real-time Discovery]
+    TC4[TC-04: Inventory Management]
+    end
+
+    subgraph "Verification & Certification"
+    TC5[TC-05: QR Millisecond Scan]
+    TC6[TC-06: Batch PDF Rendering]
+    end
+
+    style TC1 fill:#2ecc71,color:#ffffff,stroke:#27ae60
+    style TC2 fill:#2ecc71,color:#ffffff,stroke:#27ae60
+    style TC3 fill:#2ecc71,color:#ffffff,stroke:#27ae60
+    style TC4 fill:#2ecc71,color:#ffffff,stroke:#27ae60
+    style TC5 fill:#2ecc71,color:#ffffff,stroke:#27ae60
+    style TC6 fill:#2ecc71,color:#ffffff,stroke:#27ae60

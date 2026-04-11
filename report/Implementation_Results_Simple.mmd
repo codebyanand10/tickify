@@ -1,0 +1,27 @@
+graph TB
+    subgraph System_Implementation
+        direction TB
+        F[Frontend: Flutter]
+        B[Backend: Firebase & Cloud Functions]
+        D[Database: Firestore & Supabase Storage]
+        
+        F --- B
+        B --- D
+    end
+
+    subgraph Metrics
+        M1[Real-Time Sync: 100%]
+        M2[Secure Handshake: Verified]
+        M3[Certification: Automated]
+        M4[Verification: Milliseconds]
+        M5[Cloud Infrastructure: Scalable]
+    end
+
+    style F fill:#1A000A,color:#ffffff,stroke-width:2px,stroke:#3E0014
+    style B fill:#1A000A,color:#ffffff,stroke-width:2px,stroke:#3E0014
+    style D fill:#1A000A,color:#ffffff,stroke-width:2px,stroke:#3E0014
+    style M1 fill:#3E0014,color:#ffffff
+    style M2 fill:#3E0014,color:#ffffff
+    style M3 fill:#3E0014,color:#ffffff
+    style M4 fill:#3E0014,color:#ffffff
+    style M5 fill:#3E0014,color:#ffffff

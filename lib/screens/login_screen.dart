@@ -118,11 +118,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.event_note,
-                        size: 44,
-                        color: Colors.white,
-                      ),
+                    child: Image.asset(
+                      'assets/logo/tickify_logo.png',
+                      height: 80,
+                      width: 80,
+                      fit: BoxFit.contain,
+                    ),
                     ),
                   ),
                   const SizedBox(height: 18),
