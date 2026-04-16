@@ -120,7 +120,7 @@ class NotificationService {
       ongoing: isAlarm, // Alarms are ongoing until dismissed
       autoCancel: !isAlarm, // Alarms don't auto-cancel
       enableLights: true,
-      color: const Color(0xFF6C5CE7),
+      color: const Color(0xFF7A002B),
     );
 
     // iOS notification details
@@ -207,7 +207,7 @@ class NotificationService {
       enableVibration: true,
       icon: '@mipmap/ic_launcher',
       enableLights: true,
-      color: const Color(0xFF6C5CE7),
+      color: const Color(0xFF7A002B),
       autoCancel: true,
     );
 

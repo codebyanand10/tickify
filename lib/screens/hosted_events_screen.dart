@@ -26,7 +26,7 @@ class HostedEventsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -171,7 +171,7 @@ class HostedEventsScreen extends StatelessWidget {
               spreadRadius: 0,
             ),
             BoxShadow(
-              color: const Color(0xFF6C5CE7).withOpacity(0.05),
+              color: const Color(0xFF7A002B).withOpacity(0.05),
               blurRadius: 30,
               offset: const Offset(0, 12),
               spreadRadius: -5,
@@ -204,7 +204,7 @@ class HostedEventsScreen extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
                       height: 150,
-                      color: const Color(0xFF6C5CE7),
+                      color: const Color(0xFF7A002B),
                       child: const Center(
                         child: Icon(Icons.image_not_supported, color: Colors.white, size: 32),
                       ),
@@ -236,6 +236,9 @@ class HostedEventsScreen extends StatelessWidget {
                             ),
                           ),
                         ),
+                        // Status Badge
+                        _buildStatusBadge(eventData['status'] ?? 'published', isDark),
+                        const SizedBox(width: 8),
                         Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade600),
                       ],
                     ),
@@ -281,7 +284,7 @@ class HostedEventsScreen extends StatelessWidget {
   Widget _buildStatItem(IconData icon, String value, String label, bool isDark) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: const Color(0xFF6C5CE7)),
+        Icon(icon, size: 16, color: const Color(0xFF7A002B)),
         const SizedBox(width: 6),
         Text(
           value,
@@ -299,6 +302,54 @@ class HostedEventsScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStatusBadge(String status, bool isDark) {
+    Color color;
+    String label;
+    IconData icon;
+
+    switch (status) {
+      case 'published':
+        color = Colors.green;
+        label = 'Published';
+        icon = Icons.check_circle;
+        break;
+      case 'rejected':
+        color = Colors.red;
+        label = 'Rejected';
+        icon = Icons.cancel;
+        break;
+      case 'pending':
+      default:
+        color = Colors.orange;
+        label = 'Pending Approval';
+        icon = Icons.hourglass_empty;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.5), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -327,7 +378,7 @@ class EventAnalyticsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -382,7 +433,7 @@ class EventAnalyticsScreen extends StatelessWidget {
                                 'Total Registrations',
                                 '${analytics['totalRegistrations']}',
                                 Icons.people,
-                                const Color(0xFF6C5CE7),
+                                const Color(0xFF7A002B),
                                 isDark,
                               ),
                             ),
@@ -458,12 +509,12 @@ class EventAnalyticsScreen extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                      colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                        color: const Color(0xFF7A002B).withOpacity(0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),
@@ -705,8 +756,8 @@ class EventAnalyticsScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: const Color(0xFF6C5CE7).withOpacity(0.1),
-                          child: const Icon(Icons.person, color: Color(0xFF6C5CE7)),
+                          backgroundColor: const Color(0xFF7A002B).withOpacity(0.1),
+                          child: const Icon(Icons.person, color: Color(0xFF7A002B)),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

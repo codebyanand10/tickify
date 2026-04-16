@@ -4,6 +4,7 @@ import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import '../services/event_service.dart';
 import '../services/certificate_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ManageCertificateScreen extends StatefulWidget {
   final String eventId;
@@ -229,7 +230,7 @@ class _ManageCertificateScreenState extends State<ManageCertificateScreen> {
                           _buildActionButton(
                             label: "Save Settings & Generate",
                             icon: Icons.workspace_premium,
-                            color: const Color(0xFF6C5CE7),
+                            color: const Color(0xFF7A002B),
                             isLoading: _isGenerating,
                             onPressed: _saveAndGenerate,
                           ),
@@ -310,7 +311,11 @@ class _ManageCertificateScreenState extends State<ManageCertificateScreen> {
     setState(() => _isGenerating = true);
     
     try {
-      // 1. Save settings
+      // 1. Fetch LATEST event data to ensure we have the correct template
+      final eventDoc = await FirebaseFirestore.instance.collection('events').doc(widget.eventId).get();
+      final latestEventData = eventDoc.data() as Map<String, dynamic>;
+
+      // 2. Save settings
       final settings = {
         'title': _certificateTitle,
         'signatureName': _signatureName,
@@ -321,10 +326,10 @@ class _ManageCertificateScreenState extends State<ManageCertificateScreen> {
         'certificateSettings': settings,
       });
 
-      // 2. Generate certificates
+      // 3. Generate certificates using LATEST event data
       await _certificateService.generateCertificatesForEvent(
         eventId: widget.eventId,
-        eventData: widget.eventData,
+        eventData: latestEventData,
         certificateSettings: settings,
       );
 

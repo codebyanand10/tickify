@@ -29,6 +29,7 @@ dependencies:
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
   http: ^1.2.2
+  google_places_flutter: ^2.1.1
 
 
 dev_dependencies:
@@ -48,6 +49,6 @@ flutter_launcher_icons:
   adaptive_icon_background: "#000000" # android adaptive icon background color
   adaptive_icon_foreground: "assets/logo/tickify_logo.png" # android adaptive icon foreground image
 
-assets:
+  assets:
     - assets/logo/
     - assets/fonts/

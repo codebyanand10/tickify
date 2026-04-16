@@ -123,6 +123,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 80,
                       width: 80,
                       fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.airplane_ticket_rounded,
+                        size: 50,
+                        color: Colors.white,
+                      ),
                     ),
                     ),
                   ),
@@ -202,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             spreadRadius: 0,
                           ),
                           BoxShadow(
-                            color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                            color: const Color(0xFF7A002B).withOpacity(0.1),
                             blurRadius: 60,
                             offset: const Offset(0, 30),
                             spreadRadius: -10,
@@ -219,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -266,7 +271,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: TextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
                             decoration: InputDecoration(
                               labelText: "Email Address",
                               labelStyle: TextStyle(
@@ -318,7 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                                color: const Color(0xFF7A002B).withOpacity(0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -327,7 +336,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: TextField(
                             controller: _passwordController,
                             obscureText: true,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
                             decoration: InputDecoration(
                               labelText: "Password",
                               labelStyle: TextStyle(
@@ -527,7 +540,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 TextSpan(
                                   text: "Sign Up",
                                   style: TextStyle(
-                                    color: Color(0xFF6C5CE7),
+                                    color: Color(0xFF7A002B),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

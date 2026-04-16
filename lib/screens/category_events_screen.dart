@@ -19,7 +19,7 @@ class CategoryEventsScreen extends StatelessWidget {
 
   // Category colors
   static const Map<String, Color> categoryColors = {
-    'workshop': Color(0xFF6C5CE7),
+    'workshop': Color(0xFF7A002B),
     'ideathon': Color(0xFFFFD700),
     'hackathon': Color(0xFF00D2D3),
     'cultural': Color(0xFFFF7675),
@@ -30,7 +30,7 @@ class CategoryEventsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final categoryColor = categoryColors[categoryKey] ?? const Color(0xFF6C5CE7);
+    final categoryColor = categoryColors[categoryKey] ?? const Color(0xFF7A002B);
     
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
@@ -67,6 +67,7 @@ class CategoryEventsScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('events')
             .where('category', isEqualTo: categoryKey)
+            .where('status', isEqualTo: 'published')
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -140,9 +141,10 @@ class CategoryEventsScreen extends StatelessWidget {
               return bTime.compareTo(aTime); // Descending order
             });
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: events.length,
+          return RepaintBoundary(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: events.length,
             itemBuilder: (context, index) {
               final event = events[index];
               final date = event['date'] as Timestamp?;
@@ -320,6 +322,7 @@ class CategoryEventsScreen extends StatelessWidget {
                 ),
               );
             },
+            ),
           );
         },
       ),

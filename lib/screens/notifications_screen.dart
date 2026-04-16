@@ -28,7 +28,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -69,7 +69,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 icon: const Icon(Icons.done_all, size: 18),
                 label: const Text('Mark all read'),
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF6C5CE7),
+                  foregroundColor: const Color(0xFF7A002B),
                 ),
               );
             },
@@ -149,8 +149,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                const Color(0xFF6C5CE7).withOpacity(0.2),
-                                const Color(0xFFA29BFE).withOpacity(0.2),
+                                const Color(0xFF7A002B).withOpacity(0.2),
+                                const Color(0xFFAC1634).withOpacity(0.2),
                               ],
                             ),
                             shape: BoxShape.circle,
@@ -158,7 +158,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           child: Icon(
                             Icons.notifications_none,
                             size: 64,
-                            color: const Color(0xFF6C5CE7),
+                            color: const Color(0xFF7A002B),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -234,12 +234,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         decoration: BoxDecoration(
                           color: isRead
                               ? (isDark ? const Color(0xFF1E1E1E) : Colors.white)
-                              : (isDark ? const Color(0xFF2A2A2A) : Colors.blue.shade50),
+                              : (isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF9EBEF)),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isRead
                                 ? Colors.transparent
-                                : const Color(0xFF6C5CE7).withOpacity(0.3),
+                                : const Color(0xFF7A002B).withOpacity(0.3),
                             width: isRead ? 0 : 2,
                           ),
                           boxShadow: [
@@ -276,7 +276,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                               ],
                                             )
                                           : const LinearGradient(
-                                              colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                                              colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                                             ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -313,7 +313,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                 width: 10,
                                                 height: 10,
                                                 decoration: const BoxDecoration(
-                                                  color: Color(0xFF6C5CE7),
+                                                  color: Color(0xFF7A002B),
                                                   shape: BoxShape.circle,
                                                 ),
                                               ),

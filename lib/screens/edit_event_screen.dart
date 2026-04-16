@@ -6,6 +6,8 @@ import '../services/event_service.dart';
 import '../services/certificate_service.dart';
 import 'certificate_template_editor_screen.dart';
 import 'template_selection_screen.dart';
+import '../utils/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EditEventScreen extends StatefulWidget {
   final String eventId;
@@ -39,22 +41,31 @@ class _EditEventScreenState extends State<EditEventScreen> {
   bool paidEvent = false;
   bool certificationEvent = false;
   bool whatsappEnabled = false;
+  bool isTeamEvent = false;
 
   int? seatCount;
   double? feeAmount;
   String whatsappLink = '';
 
   String collegeType = 'Intra College';
+  String? hostingUniversity;
+  String? hostingCollege;
+  bool isOtherUniversity = false;
+  bool isOtherCollege = false;
+  final _otherUniversityController = TextEditingController();
+  final _otherCollegeController = TextEditingController();
 
   // Audience
   bool students = true;
   bool outsiders = false;
   bool staff = false;
 
-  // Coordinators
   List<Map<String, String>> coordinators = [
     {'name': '', 'phone': ''}
   ];
+
+  String? _certificateTemplateUrl;
+  List<dynamic>? _certificateFields;
 
   // Category keys (lowercase, singular) - these match Firestore values
   final categories = [
@@ -115,7 +126,25 @@ class _EditEventScreenState extends State<EditEventScreen> {
     paidEvent = data['paidEvent'] ?? false;
     feeAmount = (data['feeAmount'] as num?)?.toDouble();
     certificationEvent = data['certification'] ?? false;
+    isTeamEvent = data['isTeamEvent'] ?? false;
     collegeType = data['collegeType'] ?? 'Intra College';
+    hostingUniversity = data['hostingUniversity'];
+    hostingCollege = data['hostingCollege'];
+
+    // Check if hosted in an "other" institution
+    if (hostingUniversity != null && hostingUniversity != 'Other' && !AppConstants.universityData.containsKey(hostingUniversity)) {
+      isOtherUniversity = true;
+      _otherUniversityController.text = hostingUniversity!;
+      hostingUniversity = 'Other';
+    }
+
+    if (hostingCollege != null && hostingCollege != 'Other' && hostingUniversity != null && 
+        AppConstants.universityData[hostingUniversity] != null && 
+        !AppConstants.universityData[hostingUniversity]!.contains(hostingCollege)) {
+      isOtherCollege = true;
+      _otherCollegeController.text = hostingCollege!;
+      hostingCollege = 'Other';
+    }
 
     // Parse audience
     final audience = data['audience'] as Map<String, dynamic>?;
@@ -145,6 +174,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
       whatsappEnabled = true;
       whatsappLink = whatsapp.toString();
     }
+
+    _certificateTemplateUrl = data['certificateTemplateUrl'];
+    _certificateFields = data['certificateFields'];
   }
 
   @override
@@ -281,14 +313,79 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   onSaved: (v) => seatCount = v.isNotEmpty ? int.parse(v) : null,
                 ),
 
-              // 7. College type
+               // 7. Institution Details
+              buildSection("Hosting Institution", icon: Icons.school),
               buildDropdown(
-                "Event Type",
+                "Participation Scope",
                 ['Intra College', 'Inter College'],
                 collegeType,
                 (v) => setState(() => collegeType = v!),
-                icon: Icons.school,
+                icon: Icons.public,
               ),
+
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: hostingUniversity,
+                items: AppConstants.universityData.keys.map((String univ) {
+                  return DropdownMenuItem(
+                    value: univ,
+                    child: Text(univ, overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
+                onChanged: (v) {
+                  setState(() {
+                    hostingUniversity = v;
+                    hostingCollege = null;
+                    isOtherUniversity = v == 'Other';
+                    isOtherCollege = false;
+                  });
+                },
+                decoration: _inputDecoration("Hosting University", Icons.account_balance, isDark),
+                dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                validator: (v) => v == null ? "Required" : null,
+              ),
+              const SizedBox(height: 16),
+              if (isOtherUniversity)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: TextFormField(
+                    controller: _otherUniversityController,
+                    decoration: _inputDecoration("Other University Name", Icons.account_balance_outlined, isDark),
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    validator: (v) => (isOtherUniversity && (v == null || v.isEmpty)) ? "Required" : null,
+                  ),
+                ),
+
+              if (hostingUniversity != null && !isOtherUniversity)
+                DropdownButtonFormField<String>(
+                  value: hostingCollege,
+                  items: AppConstants.universityData[hostingUniversity!]!.map((String clg) {
+                    return DropdownMenuItem(
+                      value: clg,
+                      child: Text(clg, overflow: TextOverflow.ellipsis),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      hostingCollege = v;
+                      isOtherCollege = v == 'Other';
+                    });
+                  },
+                  decoration: _inputDecoration("Hosting College", Icons.business, isDark),
+                  dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  validator: (v) => v == null ? "Required" : null,
+                ),
+              
+              if (isOtherCollege || (hostingUniversity == 'Other'))
+                Padding(
+                  padding: const EdgeInsets.only(top: 16, bottom: 16),
+                  child: TextFormField(
+                    controller: _otherCollegeController,
+                    decoration: _inputDecoration("College Name", Icons.business_outlined, isDark),
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    validator: (v) => (v == null || v.isEmpty) ? "Required" : null,
+                  ),
+                ),
 
               // 8. Audience
               buildSection("Audience", icon: Icons.people_outline),
@@ -321,6 +418,14 @@ class _EditEventScreenState extends State<EditEventScreen> {
                 certificationEvent,
                 Icons.verified,
                 (v) => setState(() => certificationEvent = v),
+              ),
+
+              // 11.5 Team Event
+              buildSwitch(
+                "Team Event",
+                isTeamEvent,
+                Icons.group,
+                (v) => setState(() => isTeamEvent = v),
               ),
 
               // 12. Coordinators
@@ -403,7 +508,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
               const SizedBox(height: 24),
 
-              // 14. Certificate Management (New Section)
+              // 14. Certificate Management (Customization)
               if (certificationEvent) ...[
                 const SizedBox(height: 24),
                 Container(
@@ -428,7 +533,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
                           Icon(Icons.workspace_premium, color: const Color(0xFFD4AF37), size: 24),
                           const SizedBox(width: 12),
                           const Text(
-                            "Certificate Management",
+                            "Certificate Template",
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -439,7 +544,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: () {
-                                // Navigate to Template Editor
                                 Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(
                                     builder: (context) => CertificateTemplateEditorScreen(
@@ -447,7 +551,21 @@ class _EditEventScreenState extends State<EditEventScreen> {
                                       eventId: widget.eventId,
                                     ),
                                   ),
-                                );
+                                ).then((_) {
+                                  // Refresh data after editor closes
+                                  FirebaseFirestore.instance
+                                      .collection('events')
+                                      .doc(widget.eventId)
+                                      .get()
+                                      .then((doc) {
+                                    if (doc.exists) {
+                                      setState(() {
+                                        _certificateTemplateUrl = doc.data()?['certificateTemplateUrl'];
+                                        _certificateFields = doc.data()?['certificateFields'];
+                                      });
+                                    }
+                                  });
+                                });
                               },
                               icon: const Icon(Icons.design_services),
                               label: const Text("Design New"),
@@ -467,9 +585,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
                                   MaterialPageRoute(
                                     builder: (context) => TemplateSelectionScreen(
                                       onTemplateSelected: (template) async {
-                                          // Ask user: Edit or Use Direct?
                                           if (!mounted) return;
-                                          
                                           final choice = await showDialog<String>(
                                             context: context,
                                             builder: (context) => AlertDialog(
@@ -487,33 +603,36 @@ class _EditEventScreenState extends State<EditEventScreen> {
                                               ],
                                             )
                                           );
-
-                                          if (!mounted) return;
-
+                                          if (!mounted || choice == null) return;
                                           if (choice == 'edit') {
-                                            // 1. Update event with this template data first (so editor loads it)
                                             await FirebaseFirestore.instance.collection('events').doc(widget.eventId).update({
                                               'certificateTemplateUrl': template['imageUrl'],
                                               'certificateFields': template['fields'],
                                             });
-                                            // 2. Open Editor
+                                            setState(() {
+                                              _certificateTemplateUrl = template['imageUrl'];
+                                              _certificateFields = template['fields'];
+                                            });
                                             if (!mounted) return;
                                             Navigator.of(context, rootNavigator: true).push(
                                               MaterialPageRoute(
                                                 builder: (context) => CertificateTemplateEditorScreen(
-                                                  eventData: widget.eventData, // This might be stale, but Editor fetches from ID
+                                                  eventData: widget.eventData,
                                                   eventId: widget.eventId,
                                                 ),
                                               ),
                                             );
                                           } else if (choice == 'use') {
-                                             // 1. Save directly to Event
                                             await FirebaseFirestore.instance.collection('events').doc(widget.eventId).update({
                                               'certificateTemplateUrl': template['imageUrl'],
                                               'certificateFields': template['fields'],
                                             });
+                                            setState(() {
+                                              _certificateTemplateUrl = template['imageUrl'];
+                                              _certificateFields = template['fields'];
+                                            });
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text("Template applied! Click Generate to finish."), backgroundColor: Colors.green)
+                                              const SnackBar(content: Text("Template applied!"), backgroundColor: Colors.green)
                                             );
                                           }
                                       },
@@ -524,85 +643,13 @@ class _EditEventScreenState extends State<EditEventScreen> {
                               icon: const Icon(Icons.library_books),
                               label: const Text("Library"),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF6C5CE7),
-                                side: const BorderSide(color: Color(0xFF6C5CE7)),
+                                foregroundColor: const Color(0xFF7A002B),
+                                side: const BorderSide(color: Color(0xFF7A002B)),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Generate Certificates?'),
-                                content: const Text(
-                                  'This will generate certificates for ALL registered participants based on the current template. \n\nNote: Certificates will be marked as "Unpublished" initially.',
-                                ),
-                                actions: [
-                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                                  ElevatedButton(
-                                    onPressed: () => Navigator.pop(context, true), 
-                                    child: const Text('Generate'),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (confirm == true) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Generating certificates...'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              }
-                              
-                              try {
-                                final certService = CertificateService();
-                                await certService.generateCertificatesForEvent(
-                                  eventId: widget.eventId, 
-                                  eventData: widget.eventData, 
-                                  certificateSettings: {
-                                    'signatureName': coordinators.isNotEmpty ? coordinators[0]['name'] : 'Organizer',
-                                    // Add other settings here if needed
-                                  }
-                                );
-
-                                // Auto Publish immediately for now (or ask user)
-                                await certService.publishCertificates(widget.eventId);
-
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Certificates generated & published to students!'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                                  );
-                                }
-                              }
-                            }
-                          },
-                          icon: const Icon(Icons.auto_awesome),
-                          label: const Text("Generate & Distribute"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFD4AF37),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -610,8 +657,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
                 const SizedBox(height: 24),
               ],
 
-
               // 15. Buttons
+
               Row(
                 children: [
                   Expanded(
@@ -667,22 +714,26 @@ class _EditEventScreenState extends State<EditEventScreen> {
                               'description': description,
                               'location': location,
                               'date': eventDate,
-                              'time': eventTime,
+                              'time': eventTime != null ? '${eventTime!.hour}:${eventTime!.minute}' : null,
                               'limitedSeats': limitedSeats,
-                              'seatCount': seatCount,
+                              'seatCount': limitedSeats ? seatCount : null,
                               'collegeType': collegeType,
+                              'hostingUniversity': isOtherUniversity ? _otherUniversityController.text : hostingUniversity,
+                              'hostingCollege': (isOtherCollege || hostingUniversity == 'Other') ? _otherCollegeController.text : hostingCollege,
                               'audience': {
                                 'students': students,
                                 'outsiders': outsiders,
                                 'staff': staff,
                               },
                               'paidEvent': paidEvent,
-                              'feeAmount': feeAmount,
+                              'feeAmount': paidEvent ? feeAmount : null,
                               'certification': certificationEvent,
+                              'isTeamEvent': isTeamEvent,
                               'coordinators': coordinators,
                               'whatsapp': whatsappEnabled ? whatsappLink : null,
                               'posterUrl': widget.eventData['posterUrl'],
-                              'certificateTemplateUrl': widget.eventData['certificateTemplateUrl'],
+                              'certificateTemplateUrl': _certificateTemplateUrl,
+                              'certificateFields': _certificateFields,
                             });
 
                             if (mounted) {
@@ -726,6 +777,21 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: _showDeleteConfirmation,
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  label: const Text(
+                    "Delete Event",
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
               const SizedBox(height: 20),
             ],
           ),
@@ -744,7 +810,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
           if (icon != null) ...[
             Icon(
               icon,
-              color: const Color(0xFF6C5CE7),
+              color: const Color(0xFF7A002B),
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -793,7 +859,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF6C5CE7), width: 2),
+            borderSide: const BorderSide(color: Color(0xFF7A002B), width: 2),
           ),
         ),
         style: TextStyle(color: isDark ? Colors.white : Colors.black),
@@ -849,18 +915,18 @@ class _EditEventScreenState extends State<EditEventScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       decoration: BoxDecoration(
         color: value
-            ? const Color(0xFF6C5CE7).withOpacity(0.1)
+            ? const Color(0xFF7A002B).withOpacity(0.1)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: value ? const Color(0xFF6C5CE7) : Colors.grey.shade300,
+          color: value ? const Color(0xFF7A002B) : Colors.grey.shade300,
           width: 1,
         ),
       ),
       child: SwitchListTile(
         title: Row(
           children: [
-            Icon(icon, size: 20, color: const Color(0xFF6C5CE7)),
+            Icon(icon, size: 20, color: const Color(0xFF7A002B)),
             const SizedBox(width: 8),
             Text(
               label,
@@ -870,7 +936,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
         ),
         value: value,
         onChanged: onChanged,
-        activeThumbColor: const Color(0xFF6C5CE7),
+        activeThumbColor: const Color(0xFF7A002B),
       ),
     );
   }
@@ -918,7 +984,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: ListTile(
-        leading: const Icon(Icons.calendar_today, color: Color(0xFF6C5CE7)),
+        leading: const Icon(Icons.calendar_today, color: Color(0xFF7A002B)),
         title: Text(
           eventDate == null
               ? "Select Date"
@@ -953,7 +1019,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: ListTile(
-        leading: const Icon(Icons.access_time, color: Color(0xFF6C5CE7)),
+        leading: const Icon(Icons.access_time, color: Color(0xFF7A002B)),
         title: Text(
           eventTime == null ? "Select Time" : eventTime!.format(context),
           style: TextStyle(
@@ -969,6 +1035,143 @@ class _EditEventScreenState extends State<EditEventScreen> {
           );
           if (picked != null) setState(() => eventTime = picked);
         },
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon, bool isDark) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      filled: true,
+      fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF7A002B), width: 2),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final eventTitle = title;
+    final eventId = widget.eventId;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Text(
+          'Delete Event',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete "$eventTitle"?\n\nThis action cannot be undone. All registered users will be notified about the cancellation.',
+          style: TextStyle(
+            color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close confirmation dialog
+              
+              // Show loading
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Deleting event and notifying users...'),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+
+              try {
+                await _eventService.deleteEvent(eventId);
+                
+                if (mounted) {
+                  // Close loading dialog first
+                  Navigator.pop(context);
+                  
+                  // Wait a tiny bit to ensure the dialog is fully closed
+                  await Future.delayed(const Duration(milliseconds: 100));
+                  
+                  // Return to the events screen
+                  if (mounted) {
+                    Navigator.popUntil(context, (route) => route.isFirst);
+                  }
+                  
+                  // Show success message
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text('Event deleted successfully.'),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }

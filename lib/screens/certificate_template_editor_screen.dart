@@ -561,9 +561,9 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             border: isSelected 
-                ? Border.all(color: Colors.blueAccent, width: 2) 
+                ? Border.all(color: const Color(0xFFE77291), width: 2) 
                 : Border.all(color: Colors.transparent, width: 2), // Invisible border for touch area
-            color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+            color: isSelected ? const Color(0xFF7A002B).withOpacity(0.1) : Colors.transparent,
           ),
           child: Text(
             sampleText,
@@ -607,10 +607,10 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
                 Container(
                   width: 50, height: 50,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                    color: const Color(0xFF7A002B).withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(item['icon'], color: const Color(0xFF6C5CE7)),
+                  child: Icon(item['icon'], color: const Color(0xFF7A002B)),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -684,7 +684,7 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
                   fontWeight: field.fontWeight == FontWeight.bold ? FontWeight.normal : FontWeight.bold
                 )),
                 icon: Icon(Icons.format_bold, 
-                   color: field.fontWeight == FontWeight.bold ? Colors.blue : Colors.grey),
+                   color: field.fontWeight == FontWeight.bold ? const Color(0xFF7A002B) : Colors.grey),
               ),
             ],
           ),
@@ -694,7 +694,7 @@ class _CertificateTemplateEditorScreenState extends State<CertificateTemplateEdi
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                 Colors.black, Colors.white, Colors.grey, Colors.blue, Colors.red, Colors.green, 
+                 Colors.black, Colors.white, Colors.grey, const Color(0xFF7A002B), Colors.red, Colors.green, 
                  const Color(0xFFD4AF37) // Gold
               ].map((c) {
                  return GestureDetector(

@@ -187,10 +187,16 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                              ),
                            ],
                        ),
-                       child: const Icon(
-                         Icons.phone_android_rounded,
-                         size: 48,
-                         color: Colors.white,
+                       child: Image.asset(
+                         'assets/logo/tickify_logo.png',
+                         height: 80,
+                         width: 80,
+                         fit: BoxFit.contain,
+                         errorBuilder: (context, error, stackTrace) => const Icon(
+                           Icons.phone_android_rounded,
+                           size: 40,
+                           color: Colors.white,
+                         ),
                        ),
                      ),
                    ),
@@ -250,7 +256,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                                  style: const TextStyle(
                                    fontSize: 18, 
                                    fontWeight: FontWeight.bold,
-                                   color: Colors.black87
+                                   color: Colors.black
                                   ),
                                  decoration: InputDecoration(
                                    labelText: "Phone Number",
@@ -283,7 +289,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                                    fontSize: 24, 
                                    fontWeight: FontWeight.bold,
                                    letterSpacing: 8,
-                                   color: Colors.black87
+                                   color: Colors.black
                                   ),
                                  maxLength: 6,
                                  decoration: InputDecoration(
@@ -324,7 +330,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                                  color: const Color(0xFF7A002B).withOpacity(0.3),
                                   blurRadius: 15,
                                   offset: const Offset(0, 8),
                                 ),

@@ -209,7 +209,7 @@ class _BrowseEventsScreenState extends State<BrowseEventsScreen> {
                         spreadRadius: 0,
                       ),
                       BoxShadow(
-                        color: const Color(0xFF6C5CE7).withOpacity(0.05),
+                        color: const Color(0xFF7A002B).withOpacity(0.05),
                         blurRadius: 30,
                         offset: const Offset(0, 12),
                         spreadRadius: -5,
@@ -247,7 +247,7 @@ class _BrowseEventsScreenState extends State<BrowseEventsScreen> {
                                 ),
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                                    colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -269,7 +269,7 @@ class _BrowseEventsScreenState extends State<BrowseEventsScreen> {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                                    color: const Color(0xFF7A002B).withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
@@ -278,13 +278,13 @@ class _BrowseEventsScreenState extends State<BrowseEventsScreen> {
                                       const Icon(
                                         Icons.calendar_today,
                                         size: 14,
-                                        color: Color(0xFF6C5CE7),
+                                        color: Color(0xFF7A002B),
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
                                         DateFormat('MMM dd').format(eventDate.toDate()),
                                         style: const TextStyle(
-                                          color: Color(0xFF6C5CE7),
+                                          color: Color(0xFF7A002B),
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -330,11 +330,15 @@ class _BrowseEventsScreenState extends State<BrowseEventsScreen> {
                                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
-                                  eventTime,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                Flexible(
+                                  child: Text(
+                                    eventTime,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -367,12 +371,12 @@ class _BrowseEventsScreenState extends State<BrowseEventsScreen> {
                             height: 50,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                                colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                               ),
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                                  color: const Color(0xFF7A002B).withOpacity(0.3),
                                   blurRadius: 12,
                                   offset: const Offset(0, 6),
                                 ),
@@ -441,8 +445,8 @@ class _BrowseEventsScreenState extends State<BrowseEventsScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF6C5CE7).withOpacity(0.2),
-                  const Color(0xFFA29BFE).withOpacity(0.2),
+                  const Color(0xFF7A002B).withOpacity(0.2),
+                  const Color(0xFFAC1634).withOpacity(0.2),
                 ],
               ),
               shape: BoxShape.circle,
@@ -450,7 +454,7 @@ class _BrowseEventsScreenState extends State<BrowseEventsScreen> {
             child: Icon(
               isSearch ? Icons.search_off_rounded : Icons.event_busy,
               size: 64,
-              color: const Color(0xFF6C5CE7),
+              color: const Color(0xFF7A002B),
             ),
           ),
           const SizedBox(height: 24),

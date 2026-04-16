@@ -85,7 +85,7 @@ class _CertificateManagementScreenState extends State<CertificateManagementScree
             child: const Text(
               'Save',
               style: TextStyle(
-                color: Color(0xFF6C5CE7),
+                color: Color(0xFF7A002B),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -132,7 +132,7 @@ class _CertificateManagementScreenState extends State<CertificateManagementScree
                 icon: const Icon(Icons.auto_fix_high),
                 label: const Text('Generate Certificates'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6C5CE7),
+                  backgroundColor: const Color(0xFF7A002B),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -174,12 +174,12 @@ class _CertificateManagementScreenState extends State<CertificateManagementScree
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6C5CE7).withOpacity(0.1),
+                    color: const Color(0xFF7A002B).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     icon,
-                    color: const Color(0xFF6C5CE7),
+                    color: const Color(0xFF7A002B),
                     size: 20,
                   ),
                 ),
@@ -213,7 +213,7 @@ class _CertificateManagementScreenState extends State<CertificateManagementScree
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
             border: Border.all(
-              color: isSelected ? const Color(0xFF6C5CE7) : Colors.grey.shade300,
+              color: isSelected ? const Color(0xFF7A002B) : Colors.grey.shade300,
               width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(12),
@@ -265,7 +265,7 @@ class _CertificateManagementScreenState extends State<CertificateManagementScree
                   if (isSelected)
                     const Icon(
                       Icons.check_circle,
-                      color: Color(0xFF6C5CE7),
+                      color: Color(0xFF7A002B),
                       size: 24,
                     ),
                 ],
@@ -352,21 +352,21 @@ class _CertificateManagementScreenState extends State<CertificateManagementScree
           title: const Text('College Name'),
           value: includeCollegeName,
           onChanged: (value) => setState(() => includeCollegeName = value ?? true),
-          activeColor: const Color(0xFF6C5CE7),
+          activeColor: const Color(0xFF7A002B),
         ),
 
         CheckboxListTile(
           title: const Text('Department'),
           value: includeDepartment,
           onChanged: (value) => setState(() => includeDepartment = value ?? true),
-          activeColor: const Color(0xFF6C5CE7),
+          activeColor: const Color(0xFF7A002B),
         ),
 
         CheckboxListTile(
           title: const Text('Semester'),
           value: includeSemester,
           onChanged: (value) => setState(() => includeSemester = value ?? true),
-          activeColor: const Color(0xFF6C5CE7),
+          activeColor: const Color(0xFF7A002B),
         ),
       ],
     );

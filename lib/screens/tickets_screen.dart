@@ -178,8 +178,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                const Color(0xFF6C5CE7).withOpacity(0.2),
-                                const Color(0xFFA29BFE).withOpacity(0.2),
+                                const Color(0xFF7A002B).withOpacity(0.2),
+                                const Color(0xFFAC1634).withOpacity(0.2),
                               ],
                             ),
                             shape: BoxShape.circle,
@@ -240,22 +240,23 @@ class _TicketsScreenState extends State<TicketsScreen> {
                         final eventTime = eventData['time'] as String?;
                         final eventTitle = eventData['title'] ?? 'Event';
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 20),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isExpired
-                                  ? Colors.grey.shade600.withOpacity(0.3)
-                                  : const Color(0xFF7A002B).withOpacity(0.3),
-                              width: 1.5,
-                            ),
+                        return RepaintBoundary(
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isExpired
+                                    ? Colors.grey.shade600.withOpacity(0.3)
+                                    : const Color(0xFF7A002B).withOpacity(0.3),
+                                width: 1.5,
+                              ),
                             boxShadow: [
                               BoxShadow(
                                 color: isExpired
                                     ? Colors.black.withOpacity(0.05)
-                                    : const Color(0xFF6C5CE7).withOpacity(0.1),
+                                    : const Color(0xFF7A002B).withOpacity(0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -476,7 +477,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                             decoration: BoxDecoration(
                                               color: isExpired
                                                   ? Colors.grey.shade700.withOpacity(0.5)
-                                                  : const Color(0xFF6C5CE7).withOpacity(0.1),
+                                                  : const Color(0xFF7A002B).withOpacity(0.1),
                                               borderRadius: BorderRadius.circular(10),
                                             ),
                                             child: Icon(
@@ -492,15 +493,39 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Text(
-                                                  'Ticket: $ticketNumber',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: isExpired
-                                                        ? Colors.grey.shade400
-                                                        : (isDark ? Colors.white : Colors.black87),
-                                                  ),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        'Ticket: $ticketNumber',
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: isExpired
+                                                              ? Colors.grey.shade400
+                                                              : (isDark ? Colors.white : Colors.black87),
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                    if (regData['attendanceMarked'] == true)
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.green.withOpacity(0.2),
+                                                          borderRadius: BorderRadius.circular(6),
+                                                          border: Border.all(color: Colors.green.withOpacity(0.5)),
+                                                        ),
+                                                        child: const Text(
+                                                          'USED',
+                                                          style: TextStyle(
+                                                            color: Colors.green,
+                                                            fontSize: 10,
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                  ],
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
@@ -524,13 +549,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
                               ),
                             ],
                           ),
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-            ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
     );
   }
 
@@ -662,40 +688,46 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        if (isExpired)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade400,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'EXPIRED',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 1,
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (isExpired)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade400,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'EXPIRED',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade400,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'ACTIVE',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
                               ),
-                            ),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade400,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'ACTIVE',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -787,7 +819,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           border: Border.all(
                             color: isExpired
                                 ? Colors.grey.shade600.withOpacity(0.3)
-                                : const Color(0xFF6C5CE7).withOpacity(0.2),
+                                : const Color(0xFF7A002B).withOpacity(0.2),
                             width: 1,
                           ),
                         ),
@@ -802,31 +834,58 @@ class _TicketsScreenState extends State<TicketsScreen> {
                               decoration: BoxDecoration(
                                 color: isExpired
                                     ? Colors.grey.shade700.withOpacity(0.5)
-                                    : const Color(0xFF6C5CE7).withOpacity(0.1),
+                                    : const Color(0xFF7A002B).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Icon(
-                                    Icons.tag,
-                                    size: 18,
-                                    color: isExpired
-                                        ? Colors.grey.shade400
-                                        : const Color(0xFF6C5CE7),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Ticket: $ticketNumber',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: isExpired
-                                          ? Colors.grey.shade400
-                                          : (isDark ? Colors.white : Colors.black87),
-                                      letterSpacing: 0.5,
+                                  Flexible(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.tag,
+                                          size: 18,
+                                          color: isExpired
+                                              ? Colors.grey.shade400
+                                              : const Color(0xFF7A002B),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            'Ticket: $ticketNumber',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: isExpired
+                                                  ? Colors.grey.shade400
+                                                  : (isDark ? Colors.white : Colors.black87),
+                                              letterSpacing: 0.5,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
+                                  if (regData['attendanceMarked'] == true)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.green.withOpacity(0.5)),
+                                      ),
+                                      child: const Text(
+                                        'USED',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -849,7 +908,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 child: QrImageView(
                                   data: qrCodeData,
                                   version: QrVersions.auto,
-                                  size: 200,
+                                  size: 160,
                                   backgroundColor: Colors.white,
                                 ),
                               ),

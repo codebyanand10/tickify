@@ -35,6 +35,12 @@ class EventService {
     // Debug: Print category being saved
     print('📝 Saving event with category: $category');
 
+    final userDoc = await _firestore.collection('users').doc(user.uid).get();
+    // Use toLowerCase() to handle any case variation (e.g. 'Admin', 'ADMIN')
+    final userRole = (userDoc.data()?['role'] ?? 'student').toString().toLowerCase().trim();
+    // Only admin users can publish directly; all others go through approval workflow
+    final status = (userRole == 'admin') ? 'published' : 'pending';
+
     await _firestore.collection('events').add({
       'title': eventData['title'] ?? '',
       'category': category,
@@ -43,6 +49,8 @@ class EventService {
       'date': dateTimestamp,
       'time': timeString,
       'collegeType': eventData['collegeType'] ?? 'Intra College',
+      'hostingUniversity': eventData['hostingUniversity'] ?? userDoc.data()?['university'] ?? '',
+      'hostingCollege': eventData['hostingCollege'] ?? userDoc.data()?['collegeName'] ?? '',
       'limitedSeats': eventData['limitedSeats'] ?? false,
       'seatCount': eventData['seatCount'],
       'paidEvent': eventData['paidEvent'] ?? false,
@@ -51,15 +59,19 @@ class EventService {
       'whatsappLink': eventData['whatsapp'],
       'posterUrl': eventData['posterUrl'],
       'certificateTemplateUrl': eventData['certificateTemplateUrl'],
+      'certificateFields': eventData['certificateFields'],
       'audience': eventData['audience'] ?? {
         'students': false,
         'outsiders': false,
         'staff': false,
       },
-      'coordinators': eventData['coordinators'] ?? [],
+      'coordinators': (eventData['coordinators'] as List? ?? []).map((c) => {
+        'name': c['name']?.toString() ?? '',
+        'phone': c['phone']?.toString() ?? '',
+      }).toList(),
       'createdBy': user.uid,
-      'createdAt': Timestamp.now(),
-      'status': 'published',
+      'createdAt': FieldValue.serverTimestamp(),
+      'status': status,
     });
   }
 
@@ -81,49 +93,69 @@ class EventService {
       throw Exception("You don't have permission to edit this event");
     }
 
-    // Convert TimeOfDay to string format
-    String? timeString;
-    if (eventData['time'] != null) {
-      final time = eventData['time'] as TimeOfDay;
-      timeString = "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
-    }
+    final Map<String, dynamic> updateData = {};
 
-    // Convert DateTime to Timestamp
-    Timestamp? dateTimestamp;
-    if (eventData['date'] != null) {
-      dateTimestamp = Timestamp.fromDate(eventData['date'] as DateTime);
-    }
-
-    // Ensure category is a valid lowercase key
-    final category = (eventData['category'] ?? '').toString().toLowerCase().trim();
+    // Basic details
+    if (eventData.containsKey('title')) updateData['title'] = eventData['title'];
+    if (eventData.containsKey('description')) updateData['description'] = eventData['description'];
+    if (eventData.containsKey('location')) updateData['location'] = eventData['location'];
     
-    // Debug: Print category being saved
-    print('📝 Updating event with category: $category');
+    // Category (with lowercase conversion)
+    if (eventData.containsKey('category')) {
+      updateData['category'] = eventData['category'].toString().toLowerCase().trim();
+    }
 
-    await _firestore.collection('events').doc(eventId).update({
-      'title': eventData['title'] ?? '',
-      'category': category,
-      'description': eventData['description'] ?? '',
-      'location': eventData['location'] ?? '',
-      'date': dateTimestamp,
-      'time': timeString,
-      'collegeType': eventData['collegeType'] ?? 'Intra College',
-      'limitedSeats': eventData['limitedSeats'] ?? false,
-      'seatCount': eventData['seatCount'],
-      'paidEvent': eventData['paidEvent'] ?? false,
-      'feeAmount': eventData['feeAmount'],
-      'certification': eventData['certification'] ?? false,
-      'whatsappLink': eventData['whatsapp'],
-      'posterUrl': eventData['posterUrl'],
-      'certificateTemplateUrl': eventData['certificateTemplateUrl'],
-      'audience': eventData['audience'] ?? {
-        'students': false,
-        'outsiders': false,
-        'staff': false,
-      },
-      'coordinators': eventData['coordinators'] ?? [],
-      'updatedAt': Timestamp.now(),
-    });
+    // Time parsing
+    if (eventData.containsKey('time') && eventData['time'] != null) {
+      if (eventData['time'] is TimeOfDay) {
+        final time = eventData['time'] as TimeOfDay;
+        updateData['time'] = "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+      } else {
+        updateData['time'] = eventData['time'];
+      }
+    }
+
+    // Date parsing
+    if (eventData.containsKey('date') && eventData['date'] != null) {
+      if (eventData['date'] is DateTime) {
+        updateData['date'] = Timestamp.fromDate(eventData['date'] as DateTime);
+      } else {
+        updateData['date'] = eventData['date'];
+      }
+    }
+
+    // Toggles and numeric fields
+    if (eventData.containsKey('limitedSeats')) updateData['limitedSeats'] = eventData['limitedSeats'];
+    if (eventData.containsKey('seatCount')) updateData['seatCount'] = eventData['seatCount'];
+    if (eventData.containsKey('paidEvent')) updateData['paidEvent'] = eventData['paidEvent'];
+    if (eventData.containsKey('feeAmount')) updateData['feeAmount'] = eventData['feeAmount'];
+    if (eventData.containsKey('certification')) updateData['certification'] = eventData['certification'];
+    if (eventData.containsKey('isTeamEvent')) updateData['isTeamEvent'] = eventData['isTeamEvent'];
+    
+    // Institution
+    if (eventData.containsKey('collegeType')) updateData['collegeType'] = eventData['collegeType'];
+    if (eventData.containsKey('hostingUniversity')) updateData['hostingUniversity'] = eventData['hostingUniversity'];
+    if (eventData.containsKey('hostingCollege')) updateData['hostingCollege'] = eventData['hostingCollege'];
+
+    // Audience
+    if (eventData.containsKey('audience')) updateData['audience'] = eventData['audience'];
+    
+    // Coordinators
+    if (eventData.containsKey('coordinators')) updateData['coordinators'] = eventData['coordinators'];
+    
+    // WhatsApp and Poster
+    if (eventData.containsKey('whatsapp')) updateData['whatsappLink'] = eventData['whatsapp'];
+    if (eventData.containsKey('whatsappLink')) updateData['whatsappLink'] = eventData['whatsappLink'];
+    if (eventData.containsKey('posterUrl')) updateData['posterUrl'] = eventData['posterUrl'];
+
+    // Certificate Fields (IMPORTANT FIX)
+    if (eventData.containsKey('certificateTemplateUrl')) updateData['certificateTemplateUrl'] = eventData['certificateTemplateUrl'];
+    if (eventData.containsKey('certificateFields')) updateData['certificateFields'] = eventData['certificateFields'];
+    if (eventData.containsKey('certificateSettings')) updateData['certificateSettings'] = eventData['certificateSettings'];
+
+    updateData['updatedAt'] = Timestamp.now();
+
+    await _firestore.collection('events').doc(eventId).update(updateData);
   }
 
   Future<void> deleteEvent(String eventId) async {
@@ -209,6 +241,58 @@ class EventService {
 
     // Delete the event
     await _firestore.collection('events').doc(eventId).delete();
+  }
+
+  Future<void> updateEventStatus(String eventId, String status) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    
+    final userDoc = await _firestore.collection('users').doc(user.uid).get();
+    final userRole = (userDoc.data()?['role'] ?? 'student').toString().toLowerCase().trim();
+    
+    if (userRole != 'admin') {
+      throw Exception("Only admins can update event status");
+    }
+
+    await _firestore.collection('events').doc(eventId).update({
+      'status': status,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    if (status == 'rejected') {
+      // Create a notification for the creator
+      final eventDoc = await _firestore.collection('events').doc(eventId).get();
+      if (eventDoc.exists) {
+        final creatorId = eventDoc.data()?['createdBy'];
+        final title = eventDoc.data()?['title'] ?? 'Event';
+        if (creatorId != null) {
+          final notificationDbService = NotificationDbService();
+          await notificationDbService.createNotification(
+            userId: creatorId,
+            title: 'Event Request Rejected',
+            body: 'Your event request "$title" has been rejected.',
+            type: 'event_rejected',
+            eventId: eventId,
+          );
+        }
+      }
+    } else if (status == 'published') {
+      final eventDoc = await _firestore.collection('events').doc(eventId).get();
+      if (eventDoc.exists) {
+        final creatorId = eventDoc.data()?['createdBy'];
+        final title = eventDoc.data()?['title'] ?? 'Event';
+        if (creatorId != null) {
+          final notificationDbService = NotificationDbService();
+          await notificationDbService.createNotification(
+            userId: creatorId,
+            title: 'Event Request Approved',
+            body: 'Your event "$title" has been published successfully.',
+            type: 'event_approved',
+            eventId: eventId,
+          );
+        }
+      }
+    }
   }
 }
 

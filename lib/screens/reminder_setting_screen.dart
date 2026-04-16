@@ -229,12 +229,12 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                    color: const Color(0xFF7A002B).withOpacity(0.3),
                     blurRadius: 15,
                     spreadRadius: 2,
                     offset: const Offset(0, 8),
@@ -330,7 +330,7 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
                 color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                  color: const Color(0xFF7A002B).withOpacity(0.3),
                   width: 2,
                 ),
                 boxShadow: [
@@ -363,7 +363,7 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
                             return Theme(
                               data: Theme.of(context).copyWith(
                                 colorScheme: ColorScheme.light(
-                                  primary: const Color(0xFF6C5CE7),
+                                  primary: const Color(0xFF7A002B),
                                   onPrimary: Colors.white,
                                   onSurface: isDark ? Colors.white : Colors.black87,
                                 ),
@@ -382,8 +382,8 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
                       icon: const Icon(Icons.access_time, size: 20),
                       label: const Text('Choose Time'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF6C5CE7),
-                        side: const BorderSide(color: Color(0xFF6C5CE7)),
+                        foregroundColor: const Color(0xFF7A002B),
+                        side: const BorderSide(color: Color(0xFF7A002B)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -434,12 +434,12 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6C5CE7).withOpacity(0.4),
+                    color: const Color(0xFF7A002B).withOpacity(0.4),
                     blurRadius: 15,
                     spreadRadius: 2,
                     offset: const Offset(0, 8),
@@ -495,7 +495,7 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                 )
               : null,
           color: isSelected ? null : (isDark ? const Color(0xFF2A2A2A) : Colors.white),
@@ -503,13 +503,13 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
           border: Border.all(
             color: isSelected
                 ? Colors.transparent
-                : const Color(0xFF6C5CE7).withOpacity(0.3),
+                : const Color(0xFF7A002B).withOpacity(0.3),
             width: 2,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                    color: const Color(0xFF7A002B).withOpacity(0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -520,7 +520,7 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : const Color(0xFF6C5CE7),
+              color: isSelected ? Colors.white : const Color(0xFF7A002B),
               size: 32,
             ),
             const SizedBox(height: 8),
@@ -549,7 +549,7 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                 )
               : null,
           color: isSelected ? null : (isDark ? const Color(0xFF2A2A2A) : Colors.white),
@@ -557,7 +557,7 @@ class _ReminderSettingScreenState extends State<ReminderSettingScreen> {
           border: Border.all(
             color: isSelected
                 ? Colors.transparent
-                : const Color(0xFF6C5CE7).withOpacity(0.3),
+                : const Color(0xFF7A002B).withOpacity(0.3),
             width: 1.5,
           ),
         ),

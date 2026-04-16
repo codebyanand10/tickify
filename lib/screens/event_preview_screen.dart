@@ -1,16 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/event_service.dart';
 import 'certificate_template_editor_screen.dart';
 
-class EventPreviewScreen extends StatelessWidget {
+class EventPreviewScreen extends StatefulWidget {
   final Map<String, dynamic> eventData;
 
   const EventPreviewScreen({super.key, required this.eventData});
 
   @override
+  State<EventPreviewScreen> createState() => _EventPreviewScreenState();
+}
+
+class _EventPreviewScreenState extends State<EventPreviewScreen> {
+  String _userRole = 'student'; // default to non-admin
+  bool _roleLoaded = false;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserRole();
+  }
+
+  Future<void> _fetchUserRole() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        final role = (doc.data()?['role'] ?? 'student').toString().toLowerCase().trim();
+        if (mounted) setState(() {
+          _userRole = role;
+          _roleLoaded = true;
+        });
+      } else {
+        if (mounted) setState(() => _roleLoaded = true);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _roleLoaded = true);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final isAdmin = _userRole == 'admin';
+    final eventData = widget.eventData;
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -27,6 +64,47 @@ class EventPreviewScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Approval workflow notice for non-admin users
+            if (_roleLoaded && !isAdmin)
+              Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.orange.withOpacity(0.4), width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.orange, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Pending Admin Approval",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Your event will be reviewed by an admin before it becomes visible to attendees.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // Event Banner/Poster
             if (eventData['posterUrl'] != null)
               Container(
@@ -49,7 +127,7 @@ class EventPreviewScreen extends StatelessWidget {
                     fit: BoxFit.cover,
                     width: double.infinity,
                     errorBuilder: (context, error, stackTrace) => Container(
-                      color: const Color(0xFF6C5CE7),
+                      color: const Color(0xFF7A002B),
                       child: const Center(
                         child: Icon(Icons.image_not_supported, color: Colors.white, size: 48),
                       ),
@@ -71,14 +149,14 @@ class EventPreviewScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF6C5CE7),
-                    const Color(0xFFA29BFE),
+                    const Color(0xFF7A002B),
+                    const Color(0xFFAC1634),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                    color: const Color(0xFF7A002B).withOpacity(0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   ),
@@ -162,7 +240,7 @@ class EventPreviewScreen extends StatelessWidget {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.info_outline, color: Color(0xFF6C5CE7)),
+                      Icon(Icons.info_outline, color: Color(0xFF7A002B)),
                       SizedBox(width: 8),
                       Text(
                         "Event Details",
@@ -471,7 +549,7 @@ class EventPreviewScreen extends StatelessWidget {
                     },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: Color(0xFF6C5CE7)),
+                      side: const BorderSide(color: Color(0xFF7A002B)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -488,21 +566,34 @@ class EventPreviewScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () async {
+                    onPressed: (_isSubmitting || !_roleLoaded) ? null : () async {
+                      setState(() => _isSubmitting = true);
                       try {
                         await EventService().createEvent(eventData);
 
-                        if (context.mounted) {
+                        if (mounted) {
+                          final isAdminUser = _userRole == 'admin';
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: const Row(
+                              content: Row(
                                 children: [
-                                  Icon(Icons.check_circle, color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text("Event created successfully 🎉"),
+                                  Icon(
+                                    isAdminUser ? Icons.check_circle : Icons.hourglass_empty,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      isAdminUser
+                                          ? "Event published successfully 🎉"
+                                          : "Event submitted for admin approval ✅",
+                                    ),
+                                  ),
                                 ],
                               ),
-                              backgroundColor: const Color(0xFF6C5CE7),
+                              backgroundColor: isAdminUser
+                                  ? const Color(0xFF7A002B)
+                                  : Colors.orange.shade700,
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -513,22 +604,52 @@ class EventPreviewScreen extends StatelessWidget {
                           Navigator.popUntil(context, (route) => route.isFirst);
                         }
                       } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
+                        if (mounted) {
+                          setState(() => _isSubmitting = false);
+                          // Show detailed error dialog instead of a simple snackbar
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.red.shade900,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                            ),
+                            builder: (context) => Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.error, color: Colors.white),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text("Error: ${e.toString()}"),
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28),
+                                      SizedBox(width: 12),
+                                      Text("Submission Error", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: SingleChildScrollView(
+                                      child: Text(
+                                        e.toString(),
+                                        style: const TextStyle(color: Colors.white70, fontFamily: 'monospace', fontSize: 13),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.red.shade900),
+                                      child: const Text("Close"),
+                                    ),
                                   ),
                                 ],
-                              ),
-                              backgroundColor: const Color(0xFFFF7675),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                           );
@@ -537,18 +658,24 @@ class EventPreviewScreen extends StatelessWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: const Color(0xFF6C5CE7),
+                      backgroundColor: isAdmin
+                          ? const Color(0xFF7A002B)
+                          : Colors.orange.shade700,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      disabledBackgroundColor: Colors.grey.shade400,
                     ),
-                    child: const Text(
-                      "Create Event",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+                    child: _isSubmitting 
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text(
+                          isAdmin ? "Publish Event" : "Submit for Approval",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
                   ),
                 ),
               ],
@@ -569,10 +696,10 @@ class EventPreviewScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF6C5CE7).withOpacity(0.1),
+            color: const Color(0xFF7A002B).withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: const Color(0xFF6C5CE7), size: 20),
+          child: Icon(icon, color: const Color(0xFF7A002B), size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(

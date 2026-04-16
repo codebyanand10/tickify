@@ -79,11 +79,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                'Discover events',
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Discover events',
+                                    style: theme.textTheme.headlineSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Image.asset(
+                                    'assets/logo/tickify_logo.png',
+                                    height: 30,
+                                    width: 30,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) => Icon(
+                                      Icons.confirmation_number_rounded,
+                                      size: 24,
+                                      color: cs.primary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -172,42 +188,45 @@ class _HomeScreenState extends State<HomeScreen> {
                         onAction: _openBrowse,
                       ),
                     ),
-                    SizedBox(
-                      height: 178,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
-                        scrollDirection: Axis.horizontal,
-                        itemCount: eventDocs.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 14),
-                        itemBuilder: (context, index) {
-                          final eventDoc = eventDocs[index];
-                          final eventData = eventDoc.data() as Map<String, dynamic>;
-                          
-                          // Map category to icon
-                          IconData categoryIcon = Icons.event_rounded;
-                          final category = (eventData['category'] ?? '').toString().toLowerCase();
-                          if (category.contains('hackathon')) categoryIcon = Icons.laptop_mac_rounded;
-                          else if (category.contains('workshop')) categoryIcon = Icons.workspace_premium_rounded;
-                          else if (category.contains('cultural')) categoryIcon = Icons.palette_rounded;
-                          else if (category.contains('ideathon')) categoryIcon = Icons.lightbulb_rounded;
-                          else if (category.contains('seminar')) categoryIcon = Icons.school_rounded;
-                          else if (category.contains('tournament') || category.contains('sports')) categoryIcon = Icons.emoji_events_rounded;
-
-                          return _FeaturedCard(
-                            title: eventData['title'] ?? 'Event',
-                            subtitle: eventData['location'] ?? 'Venue TBA',
-                            icon: categoryIcon,
-                            posterUrl: eventData['posterUrl'],
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => EventDetailsScreen(event: eventDoc),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                    RepaintBoundary(
+                      child: SizedBox(
+                        height: 200,
+                        child: ListView.separated(
+                          cacheExtent: 500,
+                          padding: const EdgeInsets.fromLTRB(18, 6, 18, 8),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: eventDocs.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 14),
+                          itemBuilder: (context, index) {
+                            final eventDoc = eventDocs[index];
+                            final eventData = eventDoc.data() as Map<String, dynamic>;
+                            
+                            // Map category to icon
+                            IconData categoryIcon = Icons.event_rounded;
+                            final category = (eventData['category'] ?? '').toString().toLowerCase();
+                            if (category.contains('hackathon')) categoryIcon = Icons.laptop_mac_rounded;
+                            else if (category.contains('workshop')) categoryIcon = Icons.workspace_premium_rounded;
+                            else if (category.contains('cultural')) categoryIcon = Icons.palette_rounded;
+                            else if (category.contains('ideathon')) categoryIcon = Icons.lightbulb_rounded;
+                            else if (category.contains('seminar')) categoryIcon = Icons.school_rounded;
+                            else if (category.contains('tournament') || category.contains('sports')) categoryIcon = Icons.emoji_events_rounded;
+  
+                            return _FeaturedCard(
+                              title: eventData['title'] ?? 'Event',
+                              subtitle: eventData['location'] ?? 'Venue TBA',
+                              icon: categoryIcon,
+                              posterUrl: eventData['posterUrl'],
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => EventDetailsScreen(event: eventDoc),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -238,17 +257,19 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
-                return _CategoryTile(
-                  label: category['label'] as String,
-                  icon: category['icon'] as IconData,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CategoryEventsScreen(categoryKey: category['key']),
-                      ),
-                    );
-                  },
+                return RepaintBoundary(
+                  child: _CategoryTile(
+                    label: category['label'] as String,
+                    icon: category['icon'] as IconData,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CategoryEventsScreen(categoryKey: category['key']),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -404,6 +425,7 @@ class _FeaturedCard extends StatelessWidget {
                       child: Image.network(
                         posterUrl!,
                         fit: BoxFit.cover,
+                        cacheWidth: 600, // Optimize memory by pre-sizing
                         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),

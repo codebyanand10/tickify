@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import 'certificates_screen.dart';
+import 'admin_approval_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -122,7 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -154,12 +155,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                        colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                          color: const Color(0xFF7A002B).withOpacity(0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
@@ -324,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     Icons.confirmation_number,
                                     'Tickets',
                                     ticketCount.toString(),
-                                    const Color(0xFF6C5CE7),
+                                    const Color(0xFF7A002B),
                                     isDark,
                                   ),
                                 ),
@@ -416,6 +417,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 24),
 
+                  // Admin Controls (Only for Admin)
+                  if (userData?['role'] == 'admin') ...[
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: Colors.red.withOpacity(0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: ListTile(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AdminApprovalScreen(),
+                            ),
+                          );
+                        },
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.admin_panel_settings,
+                            color: Colors.red,
+                          ),
+                        ),
+                        title: const Text(
+                          'Admin Dashboard',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'Review and approve pending event requests',
+                          style: TextStyle(
+                            fontSize: 12,
+                          ),
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Logout Button
                   Container(
                     width: double.infinity,
@@ -466,13 +526,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF6C5CE7).withOpacity(0.1),
+            color: const Color(0xFF7A002B).withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
             icon,
             size: 20,
-            color: const Color(0xFF6C5CE7),
+            color: const Color(0xFF7A002B),
           ),
         ),
         const SizedBox(width: 16),

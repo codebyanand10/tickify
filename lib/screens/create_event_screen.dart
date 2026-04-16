@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/storage_service.dart';
 import 'event_preview_screen.dart';
+import '../utils/constants.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'certificate_template_editor_screen.dart';
+import 'template_selection_screen.dart';
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
@@ -28,6 +33,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   bool paidEvent = false;
   bool certificationEvent = false;
   bool whatsappEnabled = false;
+  bool isTeamEvent = false;
 
   int? seatCount;
   double? feeAmount;
@@ -40,17 +46,30 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   final StorageService _storageService = StorageService();
 
+  // Payment QR
+  File? _paymentQrImage;
+  String? _paymentQrUrl;
+  bool _isUploadingQr = false;
+
   String collegeType = 'Intra College';
+  String? hostingUniversity;
+  String? hostingCollege;
+  bool isOtherUniversity = false;
+  bool isOtherCollege = false;
+  final _otherUniversityController = TextEditingController();
+  final _otherCollegeController = TextEditingController();
 
   // Audience
   bool students = true;
   bool outsiders = false;
   bool staff = false;
 
-  // Coordinators
   List<Map<String, String>> coordinators = [
     {'name': '', 'phone': ''}
   ];
+
+  String? _certificateTemplateUrl;
+  List<dynamic>? _certificateFields;
 
   // Category keys (lowercase, singular) - these match Firestore values
   final categories = [
@@ -71,6 +90,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     'seminar': 'Seminar',
     'tournament': 'Tournament',
   };
+
+  @override
+  void dispose() {
+    _otherUniversityController.dispose();
+    _otherCollegeController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickPosterImage() async {
     try {
@@ -122,6 +148,55 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
   }
 
+  Future<void> _pickPaymentQr() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _paymentQrImage = File(image.path);
+        });
+        await _uploadPaymentQr();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking QR: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadPaymentQr() async {
+    if (_paymentQrImage == null) return;
+
+    setState(() => _isUploadingQr = true);
+
+    try {
+      final fileName = 'payment_qrs/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final url = await _storageService.uploadFile(
+        file: _paymentQrImage!,
+        path: fileName,
+        bucket: 'certificates',
+      );
+
+      setState(() {
+        _paymentQrUrl = url;
+        _isUploadingQr = false;
+      });
+    } catch (e) {
+      setState(() => _isUploadingQr = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('QR upload failed: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -149,12 +224,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                    colors: [Color(0xFF7A002B), Color(0xFFAC1634)],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6C5CE7).withOpacity(0.3),
+                      color: const Color(0xFF7A002B).withOpacity(0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -215,7 +290,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: _posterImageUrl != null 
-                          ? const Color(0xFF6C5CE7) 
+                          ? const Color(0xFF7A002B) 
                           : Colors.grey.shade300,
                       width: 2,
                       style: _posterImageUrl != null ? BorderStyle.solid : BorderStyle.none,
@@ -249,7 +324,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     onPressed: _pickPosterImage,
                     icon: const Icon(Icons.edit, size: 16),
                     label: const Text("Change Poster"),
-                    style: TextButton.styleFrom(foregroundColor: const Color(0xFF6C5CE7)),
+                    style: TextButton.styleFrom(foregroundColor: const Color(0xFF7A002B)),
                   ),
                 ),
               const SizedBox(height: 16),
@@ -303,14 +378,79 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   onSaved: (v) => seatCount = int.parse(v),
                 ),
 
-              // 7. College type
+               // 7. Institution Details
+              buildSection("Hosting Institution", icon: Icons.school),
               buildDropdown(
-                "Event Type",
+                "Participation Scope",
                 ['Intra College', 'Inter College'],
                 collegeType,
                 (v) => setState(() => collegeType = v!),
-                icon: Icons.school,
+                icon: Icons.public,
               ),
+
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: hostingUniversity,
+                items: AppConstants.universityData.keys.map((String univ) {
+                  return DropdownMenuItem(
+                    value: univ,
+                    child: Text(univ, overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
+                onChanged: (v) {
+                  setState(() {
+                    hostingUniversity = v;
+                    hostingCollege = null;
+                    isOtherUniversity = v == 'Other';
+                    isOtherCollege = false;
+                  });
+                },
+                decoration: _inputDecoration("Hosting University", Icons.account_balance, isDark),
+                dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                validator: (v) => v == null ? "Required" : null,
+              ),
+              const SizedBox(height: 16),
+              if (isOtherUniversity)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: TextFormField(
+                    controller: _otherUniversityController,
+                    decoration: _inputDecoration("Other University Name", Icons.account_balance_outlined, isDark),
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    validator: (v) => (isOtherUniversity && (v == null || v.isEmpty)) ? "Required" : null,
+                  ),
+                ),
+
+              if (hostingUniversity != null && !isOtherUniversity)
+                DropdownButtonFormField<String>(
+                  value: hostingCollege,
+                  items: AppConstants.universityData[hostingUniversity!]!.map((String clg) {
+                    return DropdownMenuItem(
+                      value: clg,
+                      child: Text(clg, overflow: TextOverflow.ellipsis),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      hostingCollege = v;
+                      isOtherCollege = v == 'Other';
+                    });
+                  },
+                  decoration: _inputDecoration("Hosting College", Icons.business, isDark),
+                  dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  validator: (v) => v == null ? "Required" : null,
+                ),
+              
+              if (isOtherCollege || (hostingUniversity == 'Other'))
+                Padding(
+                  padding: const EdgeInsets.only(top: 16, bottom: 16),
+                  child: TextFormField(
+                    controller: _otherCollegeController,
+                    decoration: _inputDecoration("College Name", Icons.business_outlined, isDark),
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    validator: (v) => (v == null || v.isEmpty) ? "Required" : null,
+                  ),
+                ),
 
               // 8. Audience
               buildSection("Audience", icon: Icons.people_outline),
@@ -328,13 +468,64 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 Icons.payments,
                 (v) => setState(() => paidEvent = v),
               ),
-              if (paidEvent)
+              if (paidEvent) ...[
                 buildTextField(
-                  "Registration Fee (₹)",
+                  "Fee Amount (₹)",
                   icon: Icons.currency_rupee,
                   isNumber: true,
-                  onSaved: (v) => feeAmount = double.parse(v),
+                  onSaved: (v) => feeAmount = double.tryParse(v ?? '0') ?? 0,
                 ),
+                const SizedBox(height: 16),
+                buildSection("Payment QR Code", icon: Icons.qr_code_2),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: _pickPaymentQr,
+                  child: Container(
+                    height: 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white10 : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                    ),
+                    child: _isUploadingQr
+                        ? const Center(child: CircularProgressIndicator())
+                        : (_paymentQrUrl != null || _paymentQrImage != null)
+                            ? Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: _paymentQrImage != null
+                                        ? Image.file(_paymentQrImage!, width: double.infinity, height: 150, fit: BoxFit.contain)
+                                        : Image.network(_paymentQrUrl!, width: double.infinity, height: 150, fit: BoxFit.contain),
+                                  ),
+                                  Positioned(
+                                    right: 8,
+                                    top: 8,
+                                    child: CircleAvatar(
+                                      backgroundColor: Colors.black54,
+                                      child: IconButton(
+                                        icon: const Icon(Icons.edit, color: Colors.white, size: 18),
+                                        onPressed: _pickPaymentQr,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.grey.shade500),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    "Upload Payment QR (UPI)",
+                                    style: TextStyle(color: Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
+                  ),
+                ),
+              ],
 
               // 11. Certification
               buildSwitch(
@@ -342,6 +533,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 certificationEvent,
                 Icons.verified,
                 (v) => setState(() => certificationEvent = v),
+              ),
+
+              // 11.5 Team Event
+              buildSwitch(
+                "Team Event",
+                isTeamEvent,
+                Icons.group,
+                (v) => setState(() => isTeamEvent = v),
               ),
 
               // 12. Coordinators
@@ -421,6 +620,114 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
               const SizedBox(height: 24),
 
+              // 14. Certificate Management (Customization)
+              if (certificationEvent) ...[
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.5)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFD4AF37).withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.workspace_premium, color: const Color(0xFFD4AF37), size: 24),
+                          const SizedBox(width: 12),
+                          const Text(
+                            "Certificate Template",
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context, rootNavigator: true).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => CertificateTemplateEditorScreen(
+                                      eventData: {
+                                        'title': title,
+                                      },
+                                    ),
+                                  ),
+                                ).then((result) {
+                                   if (result != null && result is Map<String, dynamic>) {
+                                     setState(() {
+                                       _certificateTemplateUrl = result['imageUrl'];
+                                       _certificateFields = result['fields'];
+                                     });
+                                   }
+                                });
+                              },
+                              icon: const Icon(Icons.design_services),
+                              label: const Text("Design New"),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFD4AF37),
+                                side: const BorderSide(color: Color(0xFFD4AF37)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context, 
+                                  MaterialPageRoute(
+                                    builder: (context) => TemplateSelectionScreen(
+                                      onTemplateSelected: (template) {
+                                        setState(() {
+                                          _certificateTemplateUrl = template['imageUrl'];
+                                          _certificateFields = template['fields'];
+                                        });
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text("Template applied!"), backgroundColor: Colors.green)
+                                        );
+                                      },
+                                    ),
+                                  )
+                                );
+                              },
+                              icon: const Icon(Icons.library_books),
+                              label: const Text("Library"),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF7A002B),
+                                side: const BorderSide(color: Color(0xFF7A002B)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_certificateTemplateUrl != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(
+                            "✓ Template Selected",
+                            style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
               // 14. Buttons
               Row(
                 children: [
@@ -431,7 +738,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: Color(0xFF6C5CE7)),
+                        side: const BorderSide(color: Color(0xFF7A002B)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -463,6 +770,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                                   'limitedSeats': limitedSeats,
                                   'seatCount': seatCount,
                                   'collegeType': collegeType,
+                                  'hostingUniversity': isOtherUniversity ? _otherUniversityController.text : hostingUniversity,
+                                  'hostingCollege': (isOtherCollege || hostingUniversity == 'Other') ? _otherCollegeController.text : hostingCollege,
                                   'audience': {
                                     'students': students,
                                     'outsiders': outsiders,
@@ -471,9 +780,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                                   'paidEvent': paidEvent,
                                   'feeAmount': feeAmount,
                                   'certification': certificationEvent,
+                                  'isTeamEvent': isTeamEvent,
                                   'coordinators': coordinators,
-                                  'whatsapp': whatsappEnabled ? whatsappLink : null,
                                   'posterUrl': _posterImageUrl,
+                                  'paymentQrUrl': _paymentQrUrl,
+                                  'certificateTemplateUrl': _certificateTemplateUrl,
+                                  'certificateFields': _certificateFields,
                                 },
                               ),
                             ),
@@ -482,7 +794,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFF6C5CE7),
+                        backgroundColor: const Color(0xFF7A002B),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -516,17 +828,20 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           if (icon != null) ...[
             Icon(
               icon,
-              color: const Color(0xFF6C5CE7),
+              color: const Color(0xFF7A002B),
               size: 20,
             ),
             const SizedBox(width: 8),
           ],
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2D3436),
+          Flexible(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2D3436),
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -563,12 +878,33 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF6C5CE7), width: 2),
+            borderSide: const BorderSide(color: Color(0xFF7A002B), width: 2),
           ),
         ),
         style: TextStyle(color: isDark ? Colors.white : Colors.black),
         validator: (v) => v == null || v.isEmpty ? "Required" : null,
-        onSaved: (v) => onSaved(v!),
+        onSaved: (v) => onSaved(v ?? ''),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon, bool isDark) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      filled: true,
+      fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF7A002B), width: 2),
       ),
     );
   }
@@ -619,18 +955,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       decoration: BoxDecoration(
         color: value
-            ? const Color(0xFF6C5CE7).withOpacity(0.1)
+            ? const Color(0xFF7A002B).withOpacity(0.1)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: value ? const Color(0xFF6C5CE7) : Colors.grey.shade300,
+          color: value ? const Color(0xFF7A002B) : Colors.grey.shade300,
           width: 1,
         ),
       ),
       child: SwitchListTile(
         title: Row(
           children: [
-            Icon(icon, size: 20, color: const Color(0xFF6C5CE7)),
+            Icon(icon, size: 20, color: const Color(0xFF7A002B)),
             const SizedBox(width: 8),
             Text(
               label,
@@ -640,7 +976,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         ),
         value: value,
         onChanged: onChanged,
-        activeThumbColor: const Color(0xFF6C5CE7),
+        activeThumbColor: const Color(0xFF7A002B),
       ),
     );
   }
@@ -688,7 +1024,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: ListTile(
-        leading: const Icon(Icons.calendar_today, color: Color(0xFF6C5CE7)),
+        leading: const Icon(Icons.calendar_today, color: Color(0xFF7A002B)),
         title: Text(
           eventDate == null
               ? "Select Date"
@@ -723,7 +1059,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: ListTile(
-        leading: const Icon(Icons.access_time, color: Color(0xFF6C5CE7)),
+        leading: const Icon(Icons.access_time, color: Color(0xFF7A002B)),
         title: Text(
           eventTime == null ? "Select Time" : eventTime!.format(context),
           style: TextStyle(

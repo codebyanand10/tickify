@@ -48,6 +48,8 @@ class RegistrationService {
     required String eventId,
     required Map<String, dynamic> eventData,
     required Map<String, dynamic> userData,
+    Map<String, dynamic>? teamData,
+    String? paymentScreenshotUrl,
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -63,6 +65,17 @@ class RegistrationService {
 
     if (existingRegistration.docs.isNotEmpty) {
       throw Exception("Already registered for this event");
+    }
+
+    // Verify event status is published
+    final eventDoc = await _firestore.collection('events').doc(eventId).get();
+    if (!eventDoc.exists) {
+      throw Exception("Event not found");
+    }
+    
+    final currentStatus = eventDoc.data()?['status'] as String?;
+    if (currentStatus != 'published') {
+      throw Exception("Registration is not available for this event (Status: $currentStatus)");
     }
 
     // Check if event has limited seats
@@ -105,7 +118,8 @@ class RegistrationService {
       'ticketNumber': ticketNumber,
       'qrCodeData': qrData,
       'registeredAt': Timestamp.now(),
-      'status': 'confirmed',
+      'status': eventData['paidEvent'] == true ? 'pending' : 'approved',
+      'paymentScreenshotUrl': paymentScreenshotUrl,
       // User details
       'userName': userData['name'],
       'userEmail': user.email,
@@ -131,15 +145,67 @@ class RegistrationService {
       registrationData['amount'] = eventData['feeAmount'];
     }
 
+    if (teamData != null) {
+      registrationData['teamData'] = teamData;
+      registrationData['isTeamRegistration'] = true;
+    }
+
     final registrationRef = await _firestore
         .collection('event_registrations')
         .add(registrationData);
 
-    return {
-      'registrationId': registrationRef.id,
-      'ticketNumber': ticketNumber,
-      'qrCodeData': qrData,
-    };
+    registrationData['id'] = registrationRef.id;
+    await registrationRef.update({'id': registrationRef.id});
+
+    return registrationData;
+  }
+
+  // Update payment status (Host Action)
+  Future<void> updateRegistrationStatus(String registrationId, String newStatus, {String? reason}) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
+    // Get registration to find eventId
+    final regDoc = await _firestore.collection('event_registrations').doc(registrationId).get();
+    if (!regDoc.exists) {
+      throw Exception("Registration not found");
+    }
+
+    final regData = regDoc.data() as Map<String, dynamic>;
+    final eventId = regData['eventId'] as String?;
+
+    if (eventId == null) {
+      throw Exception("Event ID missing in registration");
+    }
+
+    // Verify current user is the host
+    final eventDoc = await _firestore.collection('events').doc(eventId).get();
+    if (!eventDoc.exists) {
+      throw Exception("Event not found");
+    }
+
+    if (eventDoc.data()?['createdBy'] != user.uid) {
+      throw Exception("Permission denied. Only the host can verify registrations for this event.");
+    }
+
+    await regDoc.reference.update({
+      'status': newStatus,
+      if (newStatus == 'approved') 'approvedAt': FieldValue.serverTimestamp(),
+      if (newStatus == 'declined') 'declinedAt': FieldValue.serverTimestamp(),
+      if (reason != null) 'declineReason': reason,
+    });
+  }
+
+  // Get pending registrations for an event
+  Stream<QuerySnapshot> getPendingRegistrations(String eventId) {
+    return _firestore
+        .collection('event_registrations')
+        .where('eventId', isEqualTo: eventId)
+        .where('status', isEqualTo: 'pending')
+        .orderBy('registeredAt', descending: true)
+        .snapshots();
   }
 
   // Calculate year from semester
@@ -180,6 +246,39 @@ class RegistrationService {
         .snapshots();
   }
 
+  // Check if user is already registered for an event
+  Future<Map<String, dynamic>?> checkUserRegistration(String eventId) async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final registration = await _firestore
+        .collection('event_registrations')
+        .where('eventId', isEqualTo: eventId)
+        .where('userId', isEqualTo: user.uid)
+        .limit(1)
+        .get();
+
+    if (registration.docs.isEmpty) return null;
+    return registration.docs.first.data();
+  }
+
+  // Check if user is already registered for an event (Stream)
+  Stream<Map<String, dynamic>?> checkUserRegistrationStream(String eventId) {
+    final user = _auth.currentUser;
+    if (user == null) return Stream.value(null);
+
+    return _firestore
+        .collection('event_registrations')
+        .where('eventId', isEqualTo: eventId)
+        .where('userId', isEqualTo: user.uid)
+        .limit(1)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) return null;
+      return snapshot.docs.first.data();
+    });
+  }
+
   // Get event analytics
   Future<Map<String, dynamic>> getEventAnalytics(String eventId) async {
     final registrations = await _firestore
@@ -209,6 +308,16 @@ class RegistrationService {
 
   // Get attendance records (only scanned tickets)
   Future<List<Map<String, dynamic>>> getAttendanceRecords(String eventId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+
+    // Verify host
+    final eventDoc = await _firestore.collection('events').doc(eventId).get();
+    if (!eventDoc.exists) throw Exception("Event not found");
+    if (eventDoc.data()?['createdBy'] != user.uid) {
+      throw Exception("Permission denied. Only the host can view attendance.");
+    }
+
     final registrations = await _firestore
         .collection('event_registrations')
         .where('eventId', isEqualTo: eventId)
@@ -219,30 +328,37 @@ class RegistrationService {
 
     for (var doc in registrations.docs) {
       final regData = doc.data();
-      final qrCodeData = regData['qrCodeData'] as String?;
+      
+      // If it's a team registration, we expand the members
+      if (regData['isTeamRegistration'] == true && regData['teamData'] != null) {
+        final teamData = regData['teamData'] as Map<String, dynamic>;
+        final members = teamData['members'] as List? ?? [];
+        final teamName = teamData['teamName'] ?? 'Unnamed Team';
 
-      if (qrCodeData != null) {
-        try {
-          final qrData = jsonDecode(qrCodeData) as Map<String, dynamic>;
+        for (var member in members) {
+          final m = member as Map<String, dynamic>;
           attendanceRecords.add({
-            'name': qrData['name'] ?? regData['userName'] ?? 'Unknown',
-            'collegeName': qrData['collegeName'] ?? regData['collegeName'] ?? 'N/A',
-            'department': qrData['department'] ?? regData['department'] ?? 'N/A',
-            'semester': qrData['semester'] ?? regData['semester'] ?? 'N/A',
-            'ticketNumber': regData['ticketNumber'] ?? '',
+            'name': m['name'] ?? 'Unknown',
+            'collegeName': m['collegeName'] ?? regData['collegeName'] ?? 'N/A',
+            'department': m['department'] ?? regData['department'] ?? 'N/A',
+            'semester': m['semester'] ?? regData['semester'] ?? 'N/A',
+            'ticketNumber': "${regData['ticketNumber']} (Team: $teamName)",
             'attendanceMarkedAt': regData['attendanceMarkedAt'],
-          });
-        } catch (e) {
-          // If QR parsing fails, use registration data
-          attendanceRecords.add({
-            'name': regData['userName'] ?? 'Unknown',
-            'collegeName': regData['collegeName'] ?? 'N/A',
-            'department': regData['department'] ?? 'N/A',
-            'semester': regData['semester'] ?? 'N/A',
-            'ticketNumber': regData['ticketNumber'] ?? '',
-            'attendanceMarkedAt': regData['attendanceMarkedAt'],
+            'isTeamMember': true,
+            'teamName': teamName,
           });
         }
+      } else {
+        // Individual registration
+        attendanceRecords.add({
+          'name': regData['userName'] ?? 'Unknown',
+          'collegeName': regData['collegeName'] ?? 'N/A',
+          'department': regData['department'] ?? 'N/A',
+          'semester': regData['semester'] ?? 'N/A',
+          'ticketNumber': regData['ticketNumber'] ?? '',
+          'attendanceMarkedAt': regData['attendanceMarkedAt'],
+          'isTeamMember': false,
+        });
       }
     }
 
@@ -259,17 +375,98 @@ class RegistrationService {
     return attendanceRecords;
   }
 
+  // Get all registration records (regardless of attendance)
+  Future<List<Map<String, dynamic>>> getRegistrationRecords(String eventId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+
+    // Verify host
+    final eventDoc = await _firestore.collection('events').doc(eventId).get();
+    if (!eventDoc.exists) throw Exception("Event not found");
+    if (eventDoc.data()?['createdBy'] != user.uid) {
+      throw Exception("Permission denied. Only the host can view registrations.");
+    }
+
+    final registrations = await _firestore
+        .collection('event_registrations')
+        .where('eventId', isEqualTo: eventId)
+        .orderBy('registeredAt', descending: true)
+        .get();
+
+    final registrationRecords = <Map<String, dynamic>>[];
+
+    for (var doc in registrations.docs) {
+      final regData = doc.data();
+      
+      // If it's a team registration, we expand the members
+      if (regData['isTeamRegistration'] == true && regData['teamData'] != null) {
+        final teamData = regData['teamData'] as Map<String, dynamic>;
+        final members = teamData['members'] as List? ?? [];
+        final teamName = teamData['teamName'] ?? 'Unnamed Team';
+
+        for (var member in members) {
+          final m = member as Map<String, dynamic>;
+          registrationRecords.add({
+            'name': m['name'] ?? 'Unknown',
+            'collegeName': m['collegeName'] ?? regData['collegeName'] ?? 'N/A',
+            'department': m['department'] ?? regData['department'] ?? 'N/A',
+            'semester': m['semester'] ?? regData['semester'] ?? 'N/A',
+            'ticketNumber': "${regData['ticketNumber']} (Team: $teamName)",
+            'registeredAt': regData['registeredAt'],
+            'attendanceMarked': regData['attendanceMarked'] ?? false,
+            'isTeamMember': true,
+            'teamName': teamName,
+          });
+        }
+      } else {
+        // Individual registration
+        registrationRecords.add({
+          'name': regData['userName'] ?? 'Unknown',
+          'collegeName': regData['collegeName'] ?? 'N/A',
+          'department': regData['department'] ?? 'N/A',
+          'semester': regData['semester'] ?? 'N/A',
+          'ticketNumber': regData['ticketNumber'] ?? '',
+          'registeredAt': regData['registeredAt'],
+          'attendanceMarked': regData['attendanceMarked'] ?? false,
+          'isTeamMember': false,
+        });
+      }
+    }
+
+    return registrationRecords;
+  }
+
   // Verify and mark attendance from QR code
   Future<Map<String, dynamic>> verifyTicketAndMarkAttendance({
     required String qrCodeData,
     required String eventId,
   }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+
     try {
       final qrData = jsonDecode(qrCodeData) as Map<String, dynamic>;
       final ticketNumber = qrData['ticketNumber'] as String?;
 
       if (ticketNumber == null) {
         throw Exception("Invalid QR code");
+      }
+
+      // Check event and permissions
+      final eventDoc = await _firestore.collection('events').doc(eventId).get();
+      if (!eventDoc.exists) {
+        throw Exception("Event not found");
+      }
+
+      final eventDataMap = eventDoc.data() as Map<String, dynamic>;
+      if (eventDataMap['createdBy'] != user.uid) {
+        throw Exception("Only the event host can mark attendance for this event.");
+      }
+
+      if (eventDataMap['status'] != 'published') {
+        throw Exception("This event is not active or has been rejected.");
       }
 
       // Find registration
@@ -285,6 +482,11 @@ class RegistrationService {
 
       final regDoc = registration.docs.first;
       final regData = regDoc.data();
+
+      // Check if registration is approved (for paid events)
+      if (regData['status'] != 'approved' && regData['status'] != 'confirmed') {
+        throw Exception("Registration is not approved (Current status: ${regData['status']}). PLEASE VERIFY PAYMENT.");
+      }
 
       // Check if already checked in
       if (regData['attendanceMarked'] == true) {
